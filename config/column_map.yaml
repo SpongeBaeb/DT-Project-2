@@ -1,0 +1,45 @@
+# 열 대응표: 표준 열 이름 ← 연도마다 바뀌는 원본 열 이름들.
+# 새 판에서 이름이 또 바뀌면 여기에 한 줄 추가한다 (코드 수정 없음).
+# 원본에 없는 표준 열은 빈 값으로 남고, contracts/tables.py 의 SHIP_YEAR 검사가 필수 열 누락을 잡는다.
+
+columns:
+  imo: ["IMO Number", "IMO number", "imo"]
+  name: ["Name", "Ship name", "name"]
+  ship_type_raw: ["Ship type", "Ship Type", "ship_type"]
+  year: ["Reporting Period", "Reporting period", "year"]
+  company: ["Company name", "Shipping company", "Company Name"]
+  fuel_t: ["Total fuel consumption [m tonnes]", "Total fuel consumption [t]", "fuel_t"]
+  co2_t: ["Total CO₂ emissions [m tonnes]", "Total CO2 emissions [m tonnes]", "co2_t"]
+  berth_co2_t:
+    - "CO₂ emissions which occurred within ports under a MS jurisdiction at berth [m tonnes]"
+    - "CO2 emissions at berth [m tonnes]"
+    - "berth_co2_t"
+  co2_per_nm_kg:
+    - "Annual average CO₂ emissions per distance [kg CO₂ / n mile]"
+    - "Annual average CO2 emissions per distance [kg CO2 / n mile]"
+    - "co2_per_nm_kg"
+  sea_hours: ["Annual Total time spent at sea [hours]", "Time spent at sea [hours]", "sea_hours"]
+  co2_intra_eu_t:
+    - "CO₂ emissions from all voyages between ports under a MS jurisdiction [m tonnes]"
+    - "CO2 emissions intra-EU [m tonnes]"
+    - "co2_intra_eu_t"
+  ets_co2_t: ["Total CO₂ emissions subject to ETS [m tonnes]", "ets_co2_t"]
+  cargo_t: ["Annual average cargo carried [m tonnes]", "Average cargo [t]", "cargo_t"]
+  ice_class: ["Ice class", "ice_class"]
+  eedi: ["Technical efficiency value", "EEDI", "eedi"]
+
+# 원본 선종 이름 → 표준 선종 (config/default.yaml data.ship_types)
+ship_types:
+  Container ship: container
+  Container: container
+  Oil tanker: tanker
+  Tanker: tanker
+  Bulk carrier: bulk
+  Bulk: bulk
+  Ro-pax ship: ro_pax
+  Ro-Pax: ro_pax
+
+# 연도별 엑셀 읽기 옵션 (실제 MRV 파일은 위쪽에 제목 행이 있음 → header_row 로 지정)
+read_options:
+  default: {header_row: 0, sheet: 0}
+  # 2023: {header_row: 2, sheet: "Full ERs"}

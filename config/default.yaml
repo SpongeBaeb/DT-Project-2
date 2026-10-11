@@ -1,0 +1,52 @@
+# Sea Marksman 기본 설정. 숫자 기준(임계값)은 코드에 박지 않고 여기에만 둔다.
+# 다른 설정으로 돌리려면: python tasks.py all --config config/내설정.yaml
+
+project:
+  model_version: "0.1.0"          # 모델·결과 형식을 바꾸면 올린다 (결과 표 형식 버전은 contracts/tables.py)
+
+data:
+  source: sample                  # sample = 합성 표본(뼈대 확인용) | mrv = 실제 EU MRV
+  years: [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
+  raw_dir: data/raw
+  snapshot_dir: data/snapshots
+  cache_dir: data/cache
+  column_map: config/column_map.yaml
+  ship_types: [container, tanker, bulk, ro_pax]   # 표준 선종 이름 (열 대응표에서 원본 이름을 이걸로 바꿈)
+
+train:
+  cutoff_year: null               # null = 전체 연도로 학습. 시간 분할 검증은 evaluation이 직접 잘라서 씀
+  seed: 42
+
+# 모델 슬롯: 순서대로 실행된다. "모듈:클래스" 를 바꾸면 부품이 교체된다.
+# 각 부품은 models/base.py 의 Stage 규칙(requires → produces)을 지킨다.
+stages:
+  - use: models.common.peer:PeerGroup
+  - use: models.common.linear_baseline:LinearBaseline
+    params:
+      # 해상 효율 회귀에 쓸 변수 → 원인 막대 이름. 크기만 = 기획서의 "크기만 보정한 기준"
+      features: {ln_dwt: size}
+  - use: models.common.berth:BerthCompare
+  - use: models.common.position:ShrunkPosition
+    params: {shrink_lambda: 1.0}
+  - use: models.quality.signals:IllusionSignals
+  - use: models.cluster.stub:TertileTypes
+  - use: models.forecast.persistence:PersistenceForecast
+
+thresholds:                        # 2-3절 착시 신호, 5-7절 점검 규칙
+  short_sea_hours: 500
+  co2_per_fuel_min: 3.05
+  cargo_dwt_ratio_max: 1.2
+  min_speed_kn: 3.0
+  berth_sigma: 2.0
+  z_consistently_high: 2.0
+  train_range_q: [0.01, 0.99]     # 이 범위를 벗어난 입력은 "외삽" 경고
+  special_operators: ["Shuttle Tankers AS"]
+
+physics:                           # 6장 가정 계산(속력 변경). 방현수 님이 선종별 값을 채움
+  main_engine_share: {container: 0.75, tanker: 0.70, bulk: 0.75, ro_pax: 0.60}
+
+api:
+  cors_origins: ["http://localhost:5173"]
+
+web:
+  public_data_dir: web/public/data

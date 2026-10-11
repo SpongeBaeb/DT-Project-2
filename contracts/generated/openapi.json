@@ -1,0 +1,1162 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sea Marksman API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/meta": {
+      "get": {
+        "summary": "Meta",
+        "operationId": "meta_meta_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ships/{imo}/inputs": {
+      "get": {
+        "summary": "Ship Inputs",
+        "operationId": "ship_inputs_ships__imo__inputs_get",
+        "parameters": [
+          {
+            "name": "imo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Imo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShipInputs"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/diagnose": {
+      "post": {
+        "summary": "Diagnose",
+        "operationId": "diagnose_diagnose_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiagnoseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosisResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/whatif/speed": {
+      "post": {
+        "summary": "Whatif Speed",
+        "operationId": "whatif_speed_whatif_speed_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WhatIfSpeedRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatIfSpeedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BerthBlock": {
+        "additionalProperties": false,
+        "properties": {
+          "actual_t": {
+            "title": "Actual T",
+            "type": "number"
+          },
+          "expected_t": {
+            "title": "Expected T",
+            "type": "number"
+          },
+          "ratio": {
+            "title": "Ratio",
+            "type": "number"
+          },
+          "z": {
+            "title": "Z",
+            "type": "number"
+          },
+          "hist_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hist Min"
+          },
+          "hist_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hist Max"
+          },
+          "hist_z": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hist Z"
+          }
+        },
+        "required": [
+          "actual_t",
+          "expected_t",
+          "ratio",
+          "z",
+          "hist_min",
+          "hist_max",
+          "hist_z"
+        ],
+        "title": "BerthBlock",
+        "type": "object"
+      },
+      "Cause": {
+        "additionalProperties": false,
+        "properties": {
+          "factor": {
+            "title": "Factor",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "log_contrib": {
+            "description": "ln 단위 기여. 합 = ln(실제/동급 중간)",
+            "title": "Log Contrib",
+            "type": "number"
+          },
+          "pct_points": {
+            "description": "막대 표시용 근사 % (log_contrib×100)",
+            "title": "Pct Points",
+            "type": "number"
+          }
+        },
+        "required": [
+          "factor",
+          "label",
+          "log_contrib",
+          "pct_points"
+        ],
+        "title": "Cause",
+        "type": "object"
+      },
+      "Check": {
+        "additionalProperties": false,
+        "properties": {
+          "rule": {
+            "title": "Rule",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rule",
+          "ok"
+        ],
+        "title": "Check",
+        "type": "object"
+      },
+      "DiagnoseRequest": {
+        "properties": {
+          "ship": {
+            "$ref": "#/components/schemas/ShipStatic"
+          },
+          "years": {
+            "items": {
+              "$ref": "#/components/schemas/YearInput"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Years",
+            "description": "1개 이상. 마지막 연도를 진단, 앞 연도는 이력(위치·예측)에 씀"
+          },
+          "mrv_basis_confirmed": {
+            "type": "boolean",
+            "title": "Mrv Basis Confirmed",
+            "description": "입력값이 EU MRV 보고 기준임을 확인",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ship",
+          "years"
+        ],
+        "title": "DiagnoseRequest"
+      },
+      "DiagnosisResult": {
+        "additionalProperties": false,
+        "properties": {
+          "model_version": {
+            "title": "Model Version",
+            "type": "string"
+          },
+          "data_hash": {
+            "title": "Data Hash",
+            "type": "string"
+          },
+          "imo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imo"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          },
+          "ship_type": {
+            "title": "Ship Type",
+            "type": "string"
+          },
+          "size_bin": {
+            "title": "Size Bin",
+            "type": "integer"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/Check"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "sea": {
+            "$ref": "#/components/schemas/SeaBlock"
+          },
+          "berth": {
+            "$ref": "#/components/schemas/BerthBlock"
+          },
+          "position": {
+            "$ref": "#/components/schemas/PositionBlock"
+          },
+          "signals": {
+            "items": {
+              "$ref": "#/components/schemas/Signal"
+            },
+            "title": "Signals",
+            "type": "array"
+          },
+          "types": {
+            "$ref": "#/components/schemas/TypeBlock"
+          },
+          "forecast": {
+            "items": {
+              "$ref": "#/components/schemas/ForecastPoint"
+            },
+            "title": "Forecast",
+            "type": "array"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "model_version",
+          "data_hash",
+          "imo",
+          "year",
+          "ship_type",
+          "size_bin",
+          "checks",
+          "sea",
+          "berth",
+          "position",
+          "signals",
+          "types",
+          "forecast",
+          "warnings"
+        ],
+        "title": "DiagnosisResult",
+        "type": "object"
+      },
+      "ForecastPoint": {
+        "additionalProperties": false,
+        "properties": {
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          },
+          "p10": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P10"
+          },
+          "p50": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P50"
+          },
+          "p90": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P90"
+          }
+        },
+        "required": [
+          "year",
+          "p10",
+          "p50",
+          "p90"
+        ],
+        "title": "ForecastPoint",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status"
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "data_hash": {
+            "type": "string",
+            "title": "Data Hash"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "model_version",
+          "data_hash"
+        ],
+        "title": "HealthResponse"
+      },
+      "Meta": {
+        "properties": {
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "data_hash": {
+            "type": "string",
+            "title": "Data Hash"
+          },
+          "result_table_version": {
+            "type": "string",
+            "title": "Result Table Version"
+          },
+          "ship_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Ship Types"
+          },
+          "train_years": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Train Years"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "model_version",
+          "data_hash",
+          "result_table_version",
+          "ship_types",
+          "train_years",
+          "created_at"
+        ],
+        "title": "Meta"
+      },
+      "PositionBlock": {
+        "additionalProperties": false,
+        "properties": {
+          "z": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Z"
+          },
+          "n_years": {
+            "title": "N Years",
+            "type": "integer"
+          },
+          "cls": {
+            "enum": [
+              "consistently_high",
+              "typical",
+              "consistently_low"
+            ],
+            "title": "Cls",
+            "type": "string"
+          },
+          "note": {
+            "default": "",
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "z",
+          "n_years",
+          "cls"
+        ],
+        "title": "PositionBlock",
+        "type": "object"
+      },
+      "SeaBlock": {
+        "additionalProperties": false,
+        "properties": {
+          "actual": {
+            "title": "Actual",
+            "type": "number"
+          },
+          "expected": {
+            "title": "Expected",
+            "type": "number"
+          },
+          "peer_median": {
+            "title": "Peer Median",
+            "type": "number"
+          },
+          "vs_peer_pct": {
+            "title": "Vs Peer Pct",
+            "type": "number"
+          },
+          "vs_expected_pct": {
+            "title": "Vs Expected Pct",
+            "type": "number"
+          },
+          "causes": {
+            "items": {
+              "$ref": "#/components/schemas/Cause"
+            },
+            "title": "Causes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "actual",
+          "expected",
+          "peer_median",
+          "vs_peer_pct",
+          "vs_expected_pct",
+          "causes"
+        ],
+        "title": "SeaBlock",
+        "type": "object"
+      },
+      "ShipInputs": {
+        "additionalProperties": false,
+        "description": "GET /ships/{imo}/inputs 와 정적 파일의 '불러오기' 값 = DiagnoseRequest 로 바로 보낼 수 있는 모양.",
+        "properties": {
+          "ship": {
+            "$ref": "#/components/schemas/ShipStatic"
+          },
+          "years": {
+            "items": {
+              "$ref": "#/components/schemas/YearInput"
+            },
+            "title": "Years",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ship",
+          "years"
+        ],
+        "title": "ShipInputs",
+        "type": "object"
+      },
+      "ShipStatic": {
+        "additionalProperties": false,
+        "properties": {
+          "imo": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "있으면 기록용. 데이터 조회에는 쓰지 않음",
+            "title": "Imo"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Name"
+          },
+          "ship_type": {
+            "description": "표준 선종 (GET /meta 의 ship_types)",
+            "title": "Ship Type",
+            "type": "string"
+          },
+          "dwt": {
+            "description": "재화중량 t",
+            "exclusiveMinimum": 0,
+            "title": "Dwt",
+            "type": "number"
+          },
+          "build_year": {
+            "maximum": 2100,
+            "minimum": 1950,
+            "title": "Build Year",
+            "type": "integer"
+          },
+          "gt": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Gt"
+          },
+          "length_m": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Length M"
+          },
+          "ice_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ice Class"
+          },
+          "eedi": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Eedi"
+          }
+        },
+        "required": [
+          "ship_type",
+          "dwt",
+          "build_year"
+        ],
+        "title": "ShipStatic",
+        "type": "object"
+      },
+      "Signal": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "on": {
+            "title": "On",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "on"
+        ],
+        "title": "Signal",
+        "type": "object"
+      },
+      "TypeBlock": {
+        "additionalProperties": false,
+        "properties": {
+          "exposure": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exposure"
+          },
+          "age_design": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age Design"
+          },
+          "ops_outlier": {
+            "title": "Ops Outlier",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "exposure",
+          "age_design",
+          "ops_outlier"
+        ],
+        "title": "TypeBlock",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WhatIfSpeedRequest": {
+        "properties": {
+          "ship_type": {
+            "type": "string",
+            "title": "Ship Type"
+          },
+          "sea_eff_kg_nm": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Sea Eff Kg Nm"
+          },
+          "speed_change_pct": {
+            "type": "number",
+            "exclusiveMaximum": 60.0,
+            "exclusiveMinimum": -60.0,
+            "title": "Speed Change Pct",
+            "description": "예: -10 = 10% 감속"
+          },
+          "main_engine_share": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMaximum": 1.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Main Engine Share",
+            "description": "비우면 선종 기본값"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ship_type",
+          "sea_eff_kg_nm",
+          "speed_change_pct"
+        ],
+        "title": "WhatIfSpeedRequest"
+      },
+      "WhatIfSpeedResponse": {
+        "properties": {
+          "sea_eff_before": {
+            "type": "number",
+            "title": "Sea Eff Before"
+          },
+          "sea_eff_after": {
+            "type": "number",
+            "title": "Sea Eff After"
+          },
+          "change_pct": {
+            "type": "number",
+            "title": "Change Pct"
+          },
+          "main_engine_share": {
+            "type": "number",
+            "title": "Main Engine Share"
+          },
+          "method": {
+            "type": "string",
+            "const": "physics_rule",
+            "title": "Method"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "sea_eff_before",
+          "sea_eff_after",
+          "change_pct",
+          "main_engine_share",
+          "method",
+          "note"
+        ],
+        "title": "WhatIfSpeedResponse"
+      },
+      "YearInput": {
+        "additionalProperties": false,
+        "properties": {
+          "year": {
+            "maximum": 2100,
+            "minimum": 2018,
+            "title": "Year",
+            "type": "integer"
+          },
+          "co2_t": {
+            "description": "연간 CO₂ t (EU MRV 기준)",
+            "exclusiveMinimum": 0,
+            "title": "Co2 T",
+            "type": "number"
+          },
+          "berth_co2_t": {
+            "description": "정박 중 CO₂ t",
+            "minimum": 0,
+            "title": "Berth Co2 T",
+            "type": "number"
+          },
+          "distance_nm": {
+            "description": "항해 거리 해리",
+            "exclusiveMinimum": 0,
+            "title": "Distance Nm",
+            "type": "number"
+          },
+          "sea_hours": {
+            "description": "해상 시간 h",
+            "exclusiveMinimum": 0,
+            "title": "Sea Hours",
+            "type": "number"
+          },
+          "fuel_t": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Fuel T"
+          },
+          "co2_intra_eu_t": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Co2 Intra Eu T"
+          },
+          "ets_co2_t": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ets Co2 T"
+          },
+          "cargo_t": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cargo T"
+          }
+        },
+        "required": [
+          "year",
+          "co2_t",
+          "berth_co2_t",
+          "distance_nm",
+          "sea_hours"
+        ],
+        "title": "YearInput",
+        "type": "object"
+      },
+      "IndexEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "imo": {
+            "title": "Imo",
+            "type": "integer"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "former_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Former Names",
+            "type": "array"
+          },
+          "ship_type": {
+            "title": "Ship Type",
+            "type": "string"
+          },
+          "dwt": {
+            "title": "Dwt",
+            "type": "number"
+          },
+          "build_year": {
+            "title": "Build Year",
+            "type": "integer"
+          },
+          "last_year": {
+            "title": "Last Year",
+            "type": "integer"
+          },
+          "vs_peer_pct": {
+            "title": "Vs Peer Pct",
+            "type": "number"
+          },
+          "position_class": {
+            "title": "Position Class",
+            "type": "string"
+          },
+          "sig_any": {
+            "title": "Sig Any",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "imo",
+          "name",
+          "former_names",
+          "ship_type",
+          "dwt",
+          "build_year",
+          "last_year",
+          "vs_peer_pct",
+          "position_class",
+          "sig_any"
+        ],
+        "title": "IndexEntry",
+        "type": "object"
+      },
+      "ShipFile": {
+        "additionalProperties": false,
+        "properties": {
+          "imo": {
+            "title": "Imo",
+            "type": "integer"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "former_names": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Former Names",
+            "type": "array"
+          },
+          "ship_type": {
+            "title": "Ship Type",
+            "type": "string"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "inputs": {
+            "$ref": "#/components/schemas/ShipInputs"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosisResult"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "imo",
+          "name",
+          "former_names",
+          "ship_type",
+          "company",
+          "inputs",
+          "results"
+        ],
+        "title": "ShipFile",
+        "type": "object"
+      }
+    }
+  }
+}
