@@ -1,0 +1,43 @@
+# 실행: docker compose up --build   →  웹 http://localhost:8080  (API 는 웹이 /api/ 로 넘겨 줌)
+# 산출물이 없으면 먼저: docker compose run --rm tools python tasks.py pipeline  /  build   (docs/DOCKER.md)
+services:
+  api:
+    build: .
+    environment:
+      SEA_CONFIG: config/mrv_pipeline.yaml
+    volumes:
+      - ./data/snapshots:/app/data/snapshots:ro
+      - ./artifacts:/app/artifacts:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health').read()"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    volumes:
+      - ./web/public/data:/usr/share/nginx/html/data:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # 작업 명령 (데이터 처리·모델 학습·산출물 만들기). 평소에는 켜지지 않는다.
+  tools:
+    build: .
+    profiles: ["tools"]
+    entrypoint: []
+    command: ["python", "tasks.py", "--help"]
+    environment:
+      SEA_CONFIG: config/mrv_pipeline.yaml
+    volumes:
+      - ./data:/app/data
+      - ./artifacts:/app/artifacts
+      - ./web/public/data:/app/web/public/data

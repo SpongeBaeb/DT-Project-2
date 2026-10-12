@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "config" / "default.yaml"
+ENV_CONFIG = "SEA_CONFIG"    # 환경변수로 기본 설정 파일을 고른다 (API 서버·도커용). --config 가 주어지면 그쪽이 우선
 
 
 def load_yaml(path: str | Path) -> dict[str, Any]:
@@ -26,6 +28,9 @@ def _load_config_cached(path: str) -> dict[str, Any]:
 
 
 def load_config(path: str | Path | None = None) -> dict[str, Any]:
+    if path is None and os.environ.get(ENV_CONFIG):
+        path = os.environ[ENV_CONFIG]
+        path = Path(path) if Path(path).is_absolute() else ROOT / path
     return _load_config_cached(str(path or DEFAULT_CONFIG))
 
 
