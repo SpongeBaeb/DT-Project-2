@@ -108,7 +108,9 @@ def cii_snapshot(snapshot):
     """합성 표본에 CII 열을 붙인다: 배마다 일정한 비율(0.7~1.5) → 경계(1.06~1.14) 근처의 배가 섞인다."""
     rng = np.random.default_rng(0)
     base = pd.Series(rng.uniform(0.7, 1.5, snapshot["imo"].nunique()), index=snapshot["imo"].drop_duplicates().to_numpy())
-    return snapshot.assign(cii_ship_type=snapshot["ship_type"].map(CII_TYPE), cii_ratio_2026basis=snapshot["imo"].map(base))
+    ratio = snapshot["imo"].map(base)
+    rating = pd.cut(ratio, [0, 0.86, 0.94, 1.06, 1.18, np.inf], labels=list("ABCDE")).astype(str)       # 비율로 만든 합성 등급
+    return snapshot.assign(cii_ship_type=snapshot["ship_type"].map(CII_TYPE), cii_ratio_2026basis=ratio, cii_rating=rating)
 
 
 @pytest.fixture(scope="module")
@@ -186,3 +188,45 @@ def test_p_miss_one_ship_equals_full(cii_bundle, cii_snapshot, cii_res):
 
 def test_p_miss_is_blank_without_the_cii_option(qres):
     assert qres["p_miss_h1"].isna().all()
+
+
+# ───────────────────── 다음 해 리스트 (list_h1) ─────────────────────
+@pytest.fixture(scope="module")
+def list_cfg(cii_cfg):
+    c = copy.deepcopy(cii_cfg)
+    c["stages"].append({"use": "models.forecast.lists:ListRule", "params": {"de_cut": 0.8, "watch_quantile": 0.75, "watch_ratings": ["A", "B", "C"]}})
+    return c
+
+
+@pytest.fixture(scope="module")
+def list_bundle(cii_snapshot, list_cfg):
+    return ModelBundle.train(cii_snapshot, list_cfg)
+
+
+@pytest.fixture(scope="module")
+def list_res(list_bundle, cii_snapshot):
+    return list_bundle.run(cii_snapshot)
+
+
+def test_list_follows_the_rule_with_the_frozen_threshold(list_bundle, list_res, cii_snapshot):
+    RESULT_TABLE.validate(list_res, extra="forbid")
+    assert set(list_res["list_h1"]) <= {"target", "watch", ""}
+    detail = list_bundle.stages[-1].describe()["detail"]
+    r = list_res.merge(cii_snapshot[["imo", "year", "cii_rating"]], on=["imo", "year"])
+    p25 = r.loc[r["year"] == 2025, "p_miss_h1"]
+    assert detail["base_year"] == 2025 and detail["p_star"] == pytest.approx(round(float(p25.quantile(0.75)), 6))
+    target = r["p_de_h1"] >= 0.8
+    watch = ~target & r["cii_rating"].isin(list("ABC")) & (r["p_miss_h1"] >= detail["p_star"])
+    assert (r["list_h1"] == "target").equals(target) and (r["list_h1"] == "watch").equals(watch)
+    assert target.any() and watch.any()                                           # 합성 표본에도 두 리스트가 다 있다 (규칙이 비어 있지 않음)
+
+
+def test_list_one_ship_equals_full(list_bundle, cii_snapshot, list_res):
+    some = cii_snapshot["imo"].drop_duplicates().sample(12, random_state=13)
+    alone = pd.concat([list_bundle.run(cii_snapshot[cii_snapshot["imo"] == i]) for i in some], ignore_index=True).sort_values(["imo", "year"]).reset_index(drop=True)
+    full = list_res[list_res["imo"].isin(some)].sort_values(["imo", "year"]).reset_index(drop=True)
+    pd.testing.assert_series_equal(alone["list_h1"], full["list_h1"])
+
+
+def test_list_is_blank_without_the_list_stage(qres):
+    assert qres["list_h1"].isna().all()

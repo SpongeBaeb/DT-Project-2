@@ -38,6 +38,8 @@ stages:
     params: {level: sea_eff_kg_nm, prefix: fc}
   - use: models.forecast.quantile_stage:QuantileForecast           # 전체 효율 예측 (정박 포함) → fct_h*_p*, 비용·CII D·E 확률용
     params: {level: co2_per_nm_kg, prefix: fct, cii: true}
+  - use: models.forecast.lists:ListRule                            # 다음 해 리스트(영업 타깃·관찰) → list_h1. 기준 p* 는 학습 때 고정
+    params: {de_cut: 0.8, watch_quantile: 0.75, watch_ratings: [A, B, C]}
 
 thresholds:                        # 2-3절 착시 신호, 5-7절 점검 규칙
   short_sea_hours: 500

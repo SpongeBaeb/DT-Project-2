@@ -52,7 +52,7 @@
 
 ### 장원우 — 예측·화면
 - **예측**: `models/forecast/persistence.py` 가 비교 기준(변화 없음). LightGBM 분위 회귀는 같은 파일 설명대로 새 클래스. `enforce_monotone()` 을 꼭 통과, `deterministic=True`.
-  - **예측(구현됨)**: `models/forecast/quantile_stage.py: QuantileForecast` (회귀 v4 이식). 팀 설정 `config/mrv_pipeline.yaml` 은 이 부품을 두 번 쓴다 — `{level: sea_eff_kg_nm, prefix: fc}`(해상 효율, 진단·위치·'앞으로') 와 `{level: co2_per_nm_kg, prefix: fct, cii: true}`(전체 효율, 비용·CII D·E 확률 `p_de_h*`·다음 해 감축 요구 미달 확률 `p_miss_h1`. 등급 경계·감축률은 `models/forecast/cii.py`). 피처는 `features.py`(팀 `features_v1.csv` 와 대조 검증), 분위수·보정 함수는 `quantile.py`. 검증·비교 스크립트는 `experiments/A-1_forecast_features/`. LightGBM 은 학습표의 마지막 자리 반올림에도 예측이 평균 3e-3 쯤 달라지는 잡음이 있어 재현 기준은 '잡음 바닥 이내'다.
+  - **예측(구현됨)**: `models/forecast/quantile_stage.py: QuantileForecast` (회귀 v4 이식). 팀 설정 `config/mrv_pipeline.yaml` 은 이 부품을 두 번 쓴다 — `{level: sea_eff_kg_nm, prefix: fc}`(해상 효율, 진단·위치·'앞으로') 와 `{level: co2_per_nm_kg, prefix: fct, cii: true}`(전체 효율, 비용·CII D·E 확률 `p_de_h*`·다음 해 감축 요구 미달 확률 `p_miss_h1`. 그 뒤 `models.forecast.lists:ListRule`(영업 타깃·관찰 → `list_h1`)을 두면 다음 해 리스트가 결과 표에 들어가고, `python tasks.py list` 가 순위를 매겨 `artifacts/<버전>/list/` 에 표와 요약을 만든다. 등급 경계·감축률은 `models/forecast/cii.py`). 피처는 `features.py`(팀 `features_v1.csv` 와 대조 검증), 분위수·보정 함수는 `quantile.py`. 검증·비교 스크립트는 `experiments/A-1_forecast_features/`. LightGBM 은 학습표의 마지막 자리 반올림에도 예측이 평균 3e-3 쯤 달라지는 잡음이 있어 재현 기준은 '잡음 바닥 이내'다.
 - **화면**: `web/src/components/DiagnosisView.tsx` 의 ①~⑥ 칸. 타입은 `web/src/api/types.ts` (자동 생성)만 쓴다. 약속이 바뀌면 `uv run python tasks.py schema` → 타입 오류가 고칠 곳을 알려 준다.
 
 ### 박준재 — API

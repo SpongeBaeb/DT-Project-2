@@ -48,6 +48,8 @@ TOTAL_FORECAST_COLS = [f"fct_h{h}_p{q}" for h in HORIZONS for q in QUANTILES]
 P_DE_COLS = [f"p_de_h{h}" for h in HORIZONS]
 # 다음 해 CII 감축 요구를 채우지 못할 확률 (팀 정의는 1년 뒤만). 선택 열
 P_MISS_COLS = ["p_miss_h1"]
+# 다음 해 리스트 (영업 타깃 / 관찰). 선택 열
+LIST_COLS = ["list_h1"]
 
 
 # ───────────────────── 약속 1: 통합 데이터 (파이프라인 → 모델) ─────────────────────
@@ -163,13 +165,15 @@ _result_cols = [
     *[C(c, "float", "", f"{c[-1]}년 뒤 CII 등급이 D·E 일 확률", min=0, max=1) for c in P_DE_COLS],
     # 다음 해 감축 요구 미달 확률: P(거리당 CO₂ 로그 변화 > ln((1−Z(t+1))÷(1−Z(t)))). 선택 열
     C("p_miss_h1", "float", "", "1년 뒤 CII 감축 요구를 채우지 못할 확률 (해당 해 기준선 하락분보다 덜 줄이거나 늘림)", min=0, max=1),
+    # 다음 해 리스트: target(영업 타깃: 다음 해 D·E 확률 ≥ 0.8) | watch(관찰: 지금 A~C 이고 미달 확률 상위 25%) | 빈칸. 선택 열
+    C("list_h1", "str", desc="다음 해 리스트: target(영업 타깃) | watch(관찰) | 빈칸 (팀 04_final 셀 [3] 규칙, 기준 p* 는 학습 때 고정)"),
     # 기록
     C("warnings", "str", desc="이 행의 경고, ' | ' 로 연결 (없으면 빈 문자열)", nullable=False),
 ]
 
 RESULT_TABLE = TableSchema(
     name="result_table",
-    version="2.3",
+    version="2.4",
     key=("imo", "year"),
     desc="배·연도별 기준·원인·위치·신호·예측. 웹 JSON과 진단 API는 이 표에서 만들어진다.",
     columns=tuple(_result_cols),

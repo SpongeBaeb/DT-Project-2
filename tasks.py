@@ -5,6 +5,7 @@
   uv run python tasks.py build       # ② 학습 → artifacts/<버전>/ (모델 파일·결과 표·웹 JSON)
   uv run python tasks.py evaluate    # ③ 5-2절 합격 기준 판정표 → artifacts/<버전>/acceptance.md
   uv run python tasks.py cost        # ③' 비용 표 1~3 (전체 효율 예측 필요) → artifacts/<버전>/cost/
+  uv run python tasks.py list        # ③'' 다음 해 리스트(영업 타깃·관찰) 순위·요약 → artifacts/<버전>/list/
   uv run python tasks.py schema      # 약속 문서(docs/contracts.md)·OpenAPI·웹 타입 다시 만들기
   uv run python tasks.py dev         # API + 웹 함께 켜기  →  http://localhost:5173  (끄기: Ctrl+C)
   uv run python tasks.py serve       # 진단 API만  http://localhost:8000/docs
@@ -86,6 +87,22 @@ def cmd_cost(cfg, args):
     print(f"[cost] 완료 → {(out / 'cost').relative_to(ROOT)}  (summary.md 에 확정되지 않은 설정이 나열됨)")
 
 
+def cmd_list(cfg, args):
+    """다음 해 리스트(영업 타깃·관찰)에 순위를 매겨 표·요약으로 → artifacts/<버전>/list/"""
+    import json
+
+    import pandas as pd
+
+    from pipeline.run import load_snapshot
+    from publish.artifacts import latest_dir
+    from publish.lists import run as run_list
+    out = latest_dir()
+    results = pd.read_parquet(out / "result_table.parquet")
+    meta = json.loads((out / "model_meta.json").read_text(encoding="utf-8"))
+    t = run_list(results, load_snapshot(cfg), out / "list", meta)
+    print(f"[list] 완료 → {(out / 'list').relative_to(ROOT)}  (영업 타깃 {int((t['list_code'] == 'target').sum()):,}척, 관찰 {int((t['list_code'] == 'watch').sum()):,}척)")
+
+
 def cmd_serve(cfg, args):
     import uvicorn
     uvicorn.run("api.main:app", host="127.0.0.1", port=args.port, reload=False)
@@ -134,7 +151,7 @@ def cmd_all(cfg, args):
 
 
 COMMANDS = {
-    "pipeline": cmd_pipeline, "build": cmd_build, "cost": cmd_cost, "evaluate": cmd_evaluate, "schema": cmd_schema,
+    "pipeline": cmd_pipeline, "build": cmd_build, "cost": cmd_cost, "list": cmd_list, "evaluate": cmd_evaluate, "schema": cmd_schema,
     "serve": cmd_serve, "dev": cmd_dev, "test": cmd_test, "all": cmd_all,
 }
 

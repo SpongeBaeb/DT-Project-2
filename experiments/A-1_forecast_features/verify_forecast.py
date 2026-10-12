@@ -120,6 +120,21 @@ def main() -> int:
                 allok &= bool(ok_tm and ok_pm)
                 print(f"  미달 임계값 최대 차이 {float(np.nanmax(np.abs(tm - tm_team))):.1e}  {'✅' if ok_tm else '❌'}")
                 print(f"  미달 확률   팀과 평균 차이 {dpm:.2e} | 잡음 바닥 평균 {fpm:.2e}  평균 확률 내 {np.nanmean(pm):.3f} / 팀 {np.nanmean(pm_t):.3f}  {'✅' if ok_pm else '❌'}")
+                list_in = (p_ours, pm, p_team, pm_t)
+    if has_cii and "thr_miss_2026" in team.columns:
+        # 다음 해 리스트: 영업 타깃(D·E 확률 ≥ 0.8) / 관찰(타깃 아님, 지금 A~C, 미달 확률 ≥ p* = 상위 25% 경계). 팀 회귀 문서의 척수와 비교
+        rating = d25["cii_rating"].to_numpy()
+
+        def lists(pde, pmiss):
+            pstar = float(np.nanquantile(pmiss, 0.75))
+            tgt = pde >= 0.8
+            wat = ~tgt & np.isin(rating, list("ABC")) & (pmiss >= pstar)
+            return int(tgt.sum()), int(wat.sum()), pstar
+        mine_l, team_l = lists(list_in[0], list_in[1]), lists(list_in[2], list_in[3])
+        print(f"\n[다음 해 리스트] 영업 타깃 / 관찰 / p*   내 확률: {mine_l[0]:,} / {mine_l[1]:,} / {mine_l[2]:.3f}   팀 코드 확률: {team_l[0]:,} / {team_l[1]:,} / {team_l[2]:.3f}   팀 회귀 문서(forecast_v4): 1,171 / 3,150 / 0.715")
+        ok_list = abs(mine_l[0] - team_l[0]) <= 0.06 * team_l[0] and abs(mine_l[1] - team_l[1]) <= 0.06 * team_l[1]
+        allok &= bool(ok_list)
+        print("  내 리스트 척수가 팀 코드 확률로 만든 척수와 6% 이내", "✅" if ok_list else "❌")
     print("\n결과:", "✅ 재현 (팀과의 차이가 잡음 바닥 이내)" if allok else "❌ 잡음 바닥을 넘는 차이가 있음")
     return 0 if allok else 1
 
