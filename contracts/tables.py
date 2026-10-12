@@ -44,6 +44,8 @@ QUANTILES = (10, 50, 90)
 FORECAST_COLS = [f"fc_h{h}_p{q}" for h in HORIZONS for q in QUANTILES]
 # 전체 효율(정박 포함 거리당 CO₂) 예측 — 비용·CII D·E 확률용. 선택 열: 이 예측 부품이 없는 설정에서는 빈칸으로 채워진다
 TOTAL_FORECAST_COLS = [f"fct_h{h}_p{q}" for h in HORIZONS for q in QUANTILES]
+# CII 등급이 h 년 뒤 D·E 일 확률 (전체 효율 예측 + 등급 경계·감축률). 선택 열
+P_DE_COLS = [f"p_de_h{h}" for h in HORIZONS]
 
 
 # ───────────────────── 약속 1: 통합 데이터 (파이프라인 → 모델) ─────────────────────
@@ -154,13 +156,15 @@ _result_cols = [
     *[C(c, "float", "kg/nm", f"{c[4]}년 뒤 해상 효율 {c[-3:]}", min=0) for c in FORECAST_COLS],
     # 1~3년 예측 (정박 포함 거리당 CO₂, 같은 분위). 선택 열 (비용·CII 용)
     *[C(c, "float", "kg/nm", f"{c[5]}년 뒤 전체 효율(정박 포함 거리당 CO₂) {c[-3:]}", min=0) for c in TOTAL_FORECAST_COLS],
+    # CII 등급이 h 년 뒤 D·E 일 확률 (0.01~0.99: 예측 분포 양끝을 1%·99% 로 자름). 선택 열
+    *[C(c, "float", "", f"{c[-1]}년 뒤 CII 등급이 D·E 일 확률", min=0, max=1) for c in P_DE_COLS],
     # 기록
     C("warnings", "str", desc="이 행의 경고, ' | ' 로 연결 (없으면 빈 문자열)", nullable=False),
 ]
 
 RESULT_TABLE = TableSchema(
     name="result_table",
-    version="2.1",
+    version="2.2",
     key=("imo", "year"),
     desc="배·연도별 기준·원인·위치·신호·예측. 웹 JSON과 진단 API는 이 표에서 만들어진다.",
     columns=tuple(_result_cols),

@@ -4,7 +4,7 @@
         --bundle <regression_v4_final_2026-10-12> --out <기준 CSV>
 
 --bundle 폴더 안의 03_regression/reg_common.py, v1 피처 파일, mrv_pipeline 스냅샷(3183d290)을 쓴다. 팀 코드는 고치지 않는다.
-출력은 imo + 기간별 med/s/q10/q90 (원본 forecast_v4.csv 의 같은 열). 모델 파일·그림은 저장하지 않는다.
+출력은 imo + 기간별 med/s/q10/q90/thr_de/p_de (원본 forecast_v4.csv 의 같은 열 + D·E 임계값). 모델 파일·그림은 저장하지 않는다.
 """
 from __future__ import annotations
 
@@ -42,6 +42,9 @@ def main() -> int:
         m, s, zq = rc.w_center(Q, zq_raw)
         out[f"med_{y}"], out[f"s_{y}"] = m, s
         out[f"q10_{y}"], out[f"q90_{y}"] = rc.w_q(zq, m, s, 0.10), rc.w_q(zq, m, s, 0.90)
+        thr = rc.thr_de(Xh)                                            # 목표 연도에 등급 D·E 가 되기 위한 최소 Δ (결정적 계산)
+        out[f"thr_de_{y}"] = thr
+        out[f"p_de_{y}"] = 1 - rc.w_cdf(zq, m, s, thr)
         print(f"{y}: 학습 쌍 {int((p['target_year'] <= BASE).sum()):,}, 대표값 중앙값 {np.median(np.exp(m)) - 1:+.4%}")
     out.to_csv(a.out, index=False, encoding="utf-8-sig")
     print("저장:", a.out, out.shape, "/ 피처", len(feats))

@@ -61,7 +61,7 @@ MRV 연도별 보고 + 선박 제원을 IMO로 이은 배·연도 표. 파생 �
 | `cii_attained` | float | g/(t·nm) | 허용 |  | CII 근사 = CO₂ ÷ (재화중량 × 거리). 배경 비교용 |
 | `source_version` | str |  | 금지 |  | 원본 파일 판 번호 |
 
-## result_table (형식 2.1)
+## result_table (형식 2.2)
 
 배·연도별 기준·원인·위치·신호·예측. 웹 JSON과 진단 API는 이 표에서 만들어진다.
 
@@ -124,6 +124,9 @@ MRV 연도별 보고 + 선박 제원을 IMO로 이은 배·연도 표. 파생 �
 | `fct_h3_p10` | float | kg/nm | 허용 | 0 ~  | 3년 뒤 전체 효율(정박 포함 거리당 CO₂) p10 |
 | `fct_h3_p50` | float | kg/nm | 허용 | 0 ~  | 3년 뒤 전체 효율(정박 포함 거리당 CO₂) p50 |
 | `fct_h3_p90` | float | kg/nm | 허용 | 0 ~  | 3년 뒤 전체 효율(정박 포함 거리당 CO₂) p90 |
+| `p_de_h1` | float |  | 허용 | 0 ~ 1 | 1년 뒤 CII 등급이 D·E 일 확률 |
+| `p_de_h2` | float |  | 허용 | 0 ~ 1 | 2년 뒤 CII 등급이 D·E 일 확률 |
+| `p_de_h3` | float |  | 허용 | 0 ~ 1 | 3년 뒤 CII 등급이 D·E 일 확률 |
 | `warnings` | str |  | 금지 |  | 이 행의 경고, ' | ' 로 연결 (없으면 빈 문자열) |
 
 ## 원인 막대 요인

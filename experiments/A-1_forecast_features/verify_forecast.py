@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from models.forecast import cii as cii_rules  # noqa: E402
 from models.forecast import quantile as Q  # noqa: E402
 from models.forecast.features import CAT, COVID, NUM, build_features, delta_clip_bounds, make_pairs  # noqa: E402
 from pipeline import mrv_source  # noqa: E402
@@ -57,6 +58,9 @@ def main() -> int:
     feats = NUM + CAT
     team = pd.read_csv(a.team_forecast, dtype={"imo": str}, encoding="utf-8-sig")
     x25 = f[f["year"] == BASE].reset_index(drop=True)
+    d25 = d[d["year"] == BASE].sort_values("imo").reset_index(drop=True)          # CII 열 (cii_ship_type, cii_ratio_2026basis, dwt, gt)
+    assert (d25["imo"].astype(str).to_numpy() == x25["imo"].to_numpy()).all()
+    has_cii = "thr_de_2026" in team.columns
     print(f"2025년분 {len(x25):,}척 / 팀 예측 {len(team):,}척 / 피처 {len(feats)}개")
 
     allok = True
@@ -91,6 +95,21 @@ def main() -> int:
             ok = diff.mean() <= max(2 * floor, 1e-9) and corr >= 0.995
             allok &= bool(ok)
             print(f"  {col:10s} 팀과 평균 차이 {diff.mean():.2e} (최대 {diff.max():.2e}, 상관 {corr:.5f}) | 잡음 바닥 평균 {floor:.2e}  {'✅' if ok else '❌'}")
+        if has_cii:
+            tt = team.set_index("imo")
+            thr = cii_rules.threshold(d25, np.full(len(d25), y))              # 결정적 계산 → 팀 값과 정확히 같아야 한다
+            thr_team = tt.loc[xh["imo"], f"thr_de_{y}"].to_numpy(float)
+            both = ~(np.isnan(thr) & np.isnan(thr_team))
+            thr_diff = float(np.nanmax(np.abs(thr - thr_team))) if both.any() else 0.0
+            nan_same = bool((np.isnan(thr) == np.isnan(thr_team)).all())
+            ok_thr = thr_diff < 1e-12 and nan_same
+            p_ours, p_noisy, p_team = 1 - Q.cdf(zq, m, s, thr), 1 - Q.cdf(zqn, mn, sn, thr), tt.loc[xh["imo"], f"p_de_{y}"].to_numpy(float)
+            dp = float(np.nanmean(np.abs(p_ours - p_team)))
+            floor_p = float(np.nanmean(np.abs(p_ours - p_noisy)))
+            ok_p = dp <= max(2 * floor_p, 1e-9)
+            allok &= bool(ok_thr and ok_p)
+            print(f"  D·E 임계값  최대 차이 {thr_diff:.1e}, 빈칸 위치 같음 {nan_same}  {'✅' if ok_thr else '❌'}")
+            print(f"  D·E 확률    팀과 평균 차이 {dp:.2e} | 잡음 바닥 평균 {floor_p:.2e}  평균 확률 내 {np.nanmean(p_ours):.3f} / 팀 {np.nanmean(p_team):.3f}  {'✅' if ok_p else '❌'}")
     print("\n결과:", "✅ 재현 (팀과의 차이가 잡음 바닥 이내)" if allok else "❌ 잡음 바닥을 넘는 차이가 있음")
     return 0 if allok else 1
 

@@ -95,3 +95,72 @@ def test_frozen_cross_section_matches_rank_for_training_rows(snapshot):
     np.testing.assert_allclose(cs.level_pct(d).to_numpy(), want.to_numpy(), atol=1e-12)
     one = d.iloc[[5]]
     assert cs.level_pct(one).iloc[0] == pytest.approx(want.iloc[5])
+
+
+# ───────────────────── CII D·E 확률 ─────────────────────
+from contracts.tables import P_DE_COLS  # noqa: E402
+
+CII_TYPE = {"container": "Container ship", "tanker": "Tanker", "bulk": "Bulk carrier", "ro_pax": "Ro-ro passenger ship"}
+
+
+@pytest.fixture(scope="module")
+def cii_snapshot(snapshot):
+    """합성 표본에 CII 열을 붙인다: 배마다 일정한 비율(0.7~1.5) → 경계(1.06~1.14) 근처의 배가 섞인다."""
+    rng = np.random.default_rng(0)
+    base = pd.Series(rng.uniform(0.7, 1.5, snapshot["imo"].nunique()), index=snapshot["imo"].drop_duplicates().to_numpy())
+    return snapshot.assign(cii_ship_type=snapshot["ship_type"].map(CII_TYPE), cii_ratio_2026basis=snapshot["imo"].map(base))
+
+
+@pytest.fixture(scope="module")
+def cii_cfg(cfg):
+    c = copy.deepcopy(cfg)
+    stages = [copy.deepcopy(s) for s in STAGES]
+    stages[1]["params"]["cii"] = True
+    c["stages"] = [s for s in c["stages"] if not s["use"].endswith("PersistenceForecast")] + stages
+    return c
+
+
+@pytest.fixture(scope="module")
+def cii_bundle(cii_snapshot, cii_cfg):
+    return ModelBundle.train(cii_snapshot, cii_cfg)
+
+
+@pytest.fixture(scope="module")
+def cii_res(cii_bundle, cii_snapshot):
+    return cii_bundle.run(cii_snapshot)
+
+
+def test_p_de_is_a_probability_and_rises_with_the_ratio(cii_res, cii_snapshot):
+    RESULT_TABLE.validate(cii_res, extra="forbid")
+    assert cii_res[P_DE_COLS].notna().all().all()
+    assert cii_res[P_DE_COLS].min().min() >= 0.01 - 1e-12 and cii_res[P_DE_COLS].max().max() <= 0.99 + 1e-12
+    y = cii_res.merge(cii_snapshot[["imo", "year", "cii_ratio_2026basis"]], on=["imo", "year"])
+    y = y[y["year"] == 2025]
+    for h in (1, 2, 3):
+        assert y["cii_ratio_2026basis"].corr(y[f"p_de_h{h}"], method="spearman") > 0.7       # 비율이 클수록 D·E 확률이 높다
+    assert y.loc[y["cii_ratio_2026basis"] > 1.4, "p_de_h1"].mean() > 0.8
+    assert y.loc[y["cii_ratio_2026basis"] < 0.8, "p_de_h1"].mean() < 0.2
+
+
+def test_p_de_grows_with_horizon_for_a_borderline_ship(cii_res, cii_snapshot):
+    """감축률이 해마다 커지므로 같은 상태의 배는 더 먼 해에 D·E 가 되기 쉽다 (평균적으로)."""
+    y = cii_res[cii_res["year"] == 2025]
+    assert y["p_de_h3"].mean() > y["p_de_h1"].mean()
+
+
+def test_p_de_one_ship_equals_full(cii_bundle, cii_snapshot, cii_res):
+    some = cii_snapshot["imo"].drop_duplicates().sample(10, random_state=5)
+    alone = pd.concat([cii_bundle.run(cii_snapshot[cii_snapshot["imo"] == i]) for i in some], ignore_index=True).sort_values(["imo", "year"]).reset_index(drop=True)
+    full = cii_res[cii_res["imo"].isin(some)].sort_values(["imo", "year"]).reset_index(drop=True)
+    pd.testing.assert_frame_equal(alone[["imo", "year", *P_DE_COLS]], full[["imo", "year", *P_DE_COLS]], rtol=0, atol=1e-9)
+
+
+def test_p_de_is_blank_without_cii_data(qres):
+    """CII 열이 없는(또는 cii 설정이 꺼진) 설정에서는 빈칸이다 — 결과 표 2.2 의 선택 열."""
+    assert qres[P_DE_COLS].isna().all().all()
+
+
+def test_p_de_needs_the_total_efficiency_target():
+    from models.forecast.quantile_stage import QuantileForecast
+    with pytest.raises(ValueError, match="정박 포함"):
+        QuantileForecast(level="sea_eff_kg_nm", prefix="fc", cii=True)

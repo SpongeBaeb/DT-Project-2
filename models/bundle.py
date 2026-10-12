@@ -12,14 +12,14 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from contracts.tables import CONTRIB_COLS, RESULT_TABLE, SHIP_YEAR, TOTAL_FORECAST_COLS
+from contracts.tables import CONTRIB_COLS, P_DE_COLS, RESULT_TABLE, SHIP_YEAR, TOTAL_FORECAST_COLS
 from models.base import FitContext, Stage
 from shared.config import import_object
 from shared.manifest import frame_hash, now_iso
 
 IDENTITY_TOL = 1e-9
 BUNDLE_COLS = {"sea_eff_actual", "berth_actual_t", "vs_peer_pct", "vs_expected_pct", "warnings"}  # 묶음이 직접 채우는 열
-OPTIONAL_COLS = set(TOTAL_FORECAST_COLS)       # 이 열을 만드는 부품이 없으면 빈칸으로 둔다 (결과 표 2.1 의 선택 열)
+OPTIONAL_COLS = set(TOTAL_FORECAST_COLS) | set(P_DE_COLS)       # 이 열을 만드는 부품이 없으면 빈칸으로 둔다 (결과 표 2.1·2.2 의 선택 열)
 RANGE_FEATURES = ("ln_dwt", "avg_speed_kn", "ln_sea_hours", "age", "berth_share", "eu_share")
 
 

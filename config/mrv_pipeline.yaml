@@ -37,7 +37,7 @@ stages:
   - use: models.forecast.quantile_stage:QuantileForecast           # 해상 효율 예측 (정박 제외) → fc_h*_p*
     params: {level: sea_eff_kg_nm, prefix: fc}
   - use: models.forecast.quantile_stage:QuantileForecast           # 전체 효율 예측 (정박 포함) → fct_h*_p*, 비용·CII D·E 확률용
-    params: {level: co2_per_nm_kg, prefix: fct}
+    params: {level: co2_per_nm_kg, prefix: fct, cii: true}
 
 thresholds:                        # 2-3절 착시 신호, 5-7절 점검 규칙
   short_sea_hours: 500
