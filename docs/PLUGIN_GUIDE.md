@@ -62,6 +62,7 @@
 
 ### 최재희 — 비용
 - `web/src/calc.ts` 는 5-5절 식의 초안 (연간 비용, 동급 대비 차이, LMDI 분해, 회수 시점). 검토 후 고친다.
+- **비용 표(구현됨)**: `python tasks.py cost` (먼저 `build` 필요, 전체 효율 예측 `fct_*` 가 있는 설정) → `artifacts/<버전>/cost/` 에 표 1·2·3(csv·parquet)과 `summary.md`. 설정·가격은 `config/cost.yaml`, `config/cost_prices.csv`. 확정이 아닌 설정은 `summary.md` 맨 위에 자동으로 나열된다. 식은 `cost/model.py`, 팀 표와의 대조는 `experiments/A-2_cost/verify_cost.py`.
 - 사례를 추가하려면 `contracts/golden/cost_cases.json` 에 넣는다 (기대값은 **calc.ts 가 아닌 다른 방법**으로 계산). `cd web && npm test`.
 
 ### 방현수 — 도메인 검증

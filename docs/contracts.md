@@ -2,7 +2,7 @@
 
 원본: `contracts/tables.py`, `contracts/api.py`. 바꾸면 버전을 올리고 받는 사람에게 알린다.
 
-## ship_year (형식 1.2)
+## ship_year (형식 1.3)
 
 MRV 연도별 보고 + 선박 제원을 IMO로 이은 배·연도 표. 파생 변수는 shared/preprocess.derive() 가 만든다.
 
@@ -23,6 +23,7 @@ MRV 연도별 보고 + 선박 제원을 IMO로 이은 배·연도 표. 파생 �
 | `sea_hours` | float | h | 금지 | 0 ~  | EU 관련 해상 시간 |
 | `co2_intra_eu_t` | float | t | 허용 |  | EU 역내 항해 CO₂ |
 | `ets_co2_t` | float | t | 허용 |  | ETS 대상 CO₂ (2024~) |
+| `ets_co2eq_t` | float | t | 허용 | 0 ~  | ETS 대상 CO₂eq (CH₄·N₂O 포함, 2026년 비용부터 사용) |
 | `cargo_t` | float | t | 허용 |  | 평균 적재량 |
 | `dwt` | float | t | 금지 | 0 ~  | 재화중량 |
 | `gt` | float |  | 허용 |  | 총톤수 |

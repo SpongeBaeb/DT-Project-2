@@ -51,7 +51,7 @@ P_DE_COLS = [f"p_de_h{h}" for h in HORIZONS]
 # ───────────────────── 약속 1: 통합 데이터 (파이프라인 → 모델) ─────────────────────
 SHIP_YEAR = TableSchema(
     name="ship_year",
-    version="1.2",
+    version="1.3",
     key=("imo", "year"),
     desc="MRV 연도별 보고 + 선박 제원을 IMO로 이은 배·연도 표. 파생 변수는 shared/preprocess.derive() 가 만든다.",
     columns=(
@@ -70,6 +70,7 @@ SHIP_YEAR = TableSchema(
         C("sea_hours", "float", "h", "EU 관련 해상 시간", nullable=False, min=0),
         C("co2_intra_eu_t", "float", "t", "EU 역내 항해 CO₂"),
         C("ets_co2_t", "float", "t", "ETS 대상 CO₂ (2024~)"),
+        C("ets_co2eq_t", "float", "t", "ETS 대상 CO₂eq (CH₄·N₂O 포함, 2026년 비용부터 사용)", min=0),
         C("cargo_t", "float", "t", "평균 적재량"),
         # 제원 (외부 수집)
         C("dwt", "float", "t", "재화중량", nullable=False, min=0),

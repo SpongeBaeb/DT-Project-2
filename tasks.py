@@ -4,6 +4,7 @@
   uv run python tasks.py pipeline    # ① 데이터 → data/snapshots/ship_year.parquet
   uv run python tasks.py build       # ② 학습 → artifacts/<버전>/ (모델 파일·결과 표·웹 JSON)
   uv run python tasks.py evaluate    # ③ 5-2절 합격 기준 판정표 → artifacts/<버전>/acceptance.md
+  uv run python tasks.py cost        # ③' 비용 표 1~3 (전체 효율 예측 필요) → artifacts/<버전>/cost/
   uv run python tasks.py schema      # 약속 문서(docs/contracts.md)·OpenAPI·웹 타입 다시 만들기
   uv run python tasks.py dev         # API + 웹 함께 켜기  →  http://localhost:5173  (끄기: Ctrl+C)
   uv run python tasks.py serve       # 진단 API만  http://localhost:8000/docs
@@ -72,6 +73,19 @@ def cmd_schema(cfg, args):
         print("[schema] web/node_modules 없음 → 웹 타입 생성 건너뜀 (cd web && npm install 후 다시)")
 
 
+def cmd_cost(cfg, args):
+    """비용 표 1~3 (배별 연료비·탄소 비용, 변화의 분해, 동급 대비) → artifacts/<버전>/cost/"""
+    import pandas as pd
+
+    from cost.run import run as run_cost
+    from pipeline.run import load_snapshot
+    from publish.artifacts import latest_dir
+    out = latest_dir()
+    results = pd.read_parquet(out / "result_table.parquet")
+    run_cost(load_snapshot(cfg), results, out / "cost")
+    print(f"[cost] 완료 → {(out / 'cost').relative_to(ROOT)}  (summary.md 에 확정되지 않은 설정이 나열됨)")
+
+
 def cmd_serve(cfg, args):
     import uvicorn
     uvicorn.run("api.main:app", host="127.0.0.1", port=args.port, reload=False)
@@ -120,7 +134,7 @@ def cmd_all(cfg, args):
 
 
 COMMANDS = {
-    "pipeline": cmd_pipeline, "build": cmd_build, "evaluate": cmd_evaluate, "schema": cmd_schema,
+    "pipeline": cmd_pipeline, "build": cmd_build, "cost": cmd_cost, "evaluate": cmd_evaluate, "schema": cmd_schema,
     "serve": cmd_serve, "dev": cmd_dev, "test": cmd_test, "all": cmd_all,
 }
 

@@ -41,7 +41,7 @@ RENAME = {
     "tech_eff_value": "eedi", "tech_eff_kind": "eedi_kind", "cii_hsc_proxy": "hsc_proxy",
 }
 KEEP = [
-    "imo", "year", "name", "ship_type", "company", "ice_class", "fuel_t", "co2_t", "berth_co2_t", "co2_intra_eu_t", "ets_co2_t",
+    "imo", "year", "name", "ship_type", "company", "ice_class", "fuel_t", "co2_t", "berth_co2_t", "co2_intra_eu_t", "ets_co2_t", "ets_co2eq_t",
     "sea_hours", "co2_per_nm_kg", "distance_nm", "cargo_t", "dwt", "gt", "length_m", "build_year", "eedi", "eedi_kind",
     "cii_ship_type", "cii_capacity", "hsc_proxy", "fuel_group", "source_version",
     "mm_a", "mm_b", "mm_c", "co2_recovered", "co2_parts_bad", "cii_type_changed", "cii_ratio_2026basis", "cii_rating",

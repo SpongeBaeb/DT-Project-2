@@ -1,0 +1,30 @@
+# 비용 계산 설정 (최재희 님 비용_계산.py 의 SETTINGS 를 옮긴 것). 값 / 상태 / 설명.
+# 상태: 확정 | 제안(아직 확정 안 한 안) | 초안·임시(임시로 넣은 값) | 미정(비어 있음).
+# 확정이 아닌 설정은 결과 요약(cost/summary.md) 맨 위에 그대로 나열된다. 바꾸고 다시 돌리면 표가 다시 계산된다.
+# 가격은 config/cost_prices.csv (조회일 2026-10-09). 금액 단위는 백만 원.
+
+prices_file: config/cost_prices.csv
+
+settings:
+  years:        {value: [2026, 2027, 2028], status: 확정, note: 계산 대상 연도 (예측이 있는 해)}
+  base_year:    {value: 2025, status: 확정, note: 비교 기준 연도}
+  ets_share:    {value: {2025: 0.70, 2026: 1.00, 2027: 1.00, 2028: 1.00}, status: 확정, note: EU ETS 배출권 제출 비율 (규제 수치표 1절)}
+  ghg_from:     {value: 2026, status: 확정, note: 이 해부터 CH4·N2O 포함 (ets_co2eq_t 사용), 그 전은 CO2만 (ets_co2_t)}
+  fx_from_csv:  {value: true, status: 초안, note: "환율은 가격 파일의 값 (달러 1,356원, 유로 1,543원: 출처 1곳, 최근 한 달 평균)"}
+  # 석유계 배의 연료 배분: 연료 1톤당 CO2(co2_per_fuel)가 '잔사유 계수'와 경유 계수 사이 어디인지로 경유 비율을 추정
+  oil_mix:
+    value:
+      A: {resid_ef: 3.151, resid_price: 저유황유(VLSFO)}      # 기본: 저유황유 + 경유
+      B: {resid_ef: 3.114, resid_price: 중유(HSFO)}           # 다른 끝: 중유 + 경유 (스크러버)
+    status: 제안
+    note: 석유계 연료 배분은 수치표 2-5 방식. A를 기본, B를 다른 끝으로 함께 계산
+  mgo_ef:       {value: 3.206, status: 확정, note: 경유 1톤당 CO2 (FuelEU 부속서 II, 수치표 2-2)}
+  lng_ef:       {value: 2.750, status: 확정, note: LNG 1톤당 CO2 (수치표 2-2)}
+  lng_mix:      {value: true, status: 초안, note: LNG 계열은 LNG와 잔사유(가정 A·B의 잔사유)를 섞는다고 보고 계수로 LNG 비율 추정}
+  lpg_price:    {value: null, status: 미정, note: LPG 가격 미확보. LPG 추정 배는 연료비를 비워 둠}
+  other_alt_as_oil: {value: true, status: 초안, note: 기타 대체연료는 석유계 잔사유 가격으로 근사하고 '근사' 표시}
+  decomp_rule:  {value: shapley, status: 제안, note: 분해 규칙 — 겹치는 몫을 똑같이 나눔 (순서와 무관)}
+  share_rule:   {value: abs, status: 제안, note: 원인 비중 — 각 몫의 절댓값 ÷ 절댓값 합, 방향은 따로 표시}
+  range_rule:   {value: per_scenario_80, status: 제안, note: 범위 — 가격 시나리오마다 예측 대표값·80% 하한·80% 상한을 각각 계산. 3년 합계 범위는 내지 않음}
+  peer_source:  {value: 공통잔차, status: 제안, note: "표 3의 동급 기준값 = 공통잔차 동급 중간(해상 효율) + 이 배의 정박 (항해분만 동급으로 바꾸고 정박은 그대로)"}
+  unit:         {value: 1000000.0, status: 확정, note: 금액 단위 백만 원}
