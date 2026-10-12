@@ -52,6 +52,8 @@ P_MISS_COLS = ["p_miss_h1"]
 LIST_COLS = ["list_h1"]
 # 유형 소속 확률 (가장 높은 확률, 0.6 미만이면 경계에 있는 배). 선택 열
 TYPE_PROB_COLS = ["type_exposure_prob", "type_age_design_prob"]
+# 점검 필요 판정 유지 확률 (이듬해에도 같은 조건보다 10% 넘게 더 쓸 확률)과 확률을 가장 높이는·낮추는 요인. 선택 열
+PERSIST_COLS = ["persist_prob", "persist_up", "persist_down"]
 
 
 # ───────────────────── 약속 1: 통합 데이터 (파이프라인 → 모델) ─────────────────────
@@ -174,13 +176,17 @@ _result_cols = [
     C("type_age_design_prob", "float", desc="선령·설계 유형의 가장 높은 소속 확률 (0.6 미만 = 경계, 유형이 없으면 빈칸)", min=0, max=1),
     # 다음 해 리스트: target(영업 타깃: 다음 해 D·E 확률 ≥ 0.8) | watch(관찰: 지금 A~C 이고 미달 확률 상위 25%) | 빈칸. 선택 열
     C("list_h1", "str", desc="다음 해 리스트: target(영업 타깃) | watch(관찰) | 빈칸 (팀 04_final 셀 [3] 규칙, 기준 p* 는 학습 때 고정)"),
+    # 점검 필요 판정 유지 확률 (방현수 님 08_유지확률): 의미가 있는 것은 position_class 가 consistently_high 인 배. 선택 열
+    C("persist_prob", "float", desc="이듬해에도 같은 조건 예상보다 10% 넘게 더 쓸 확률 (점검 필요 배용. 순서는 믿을 수 있고 값은 해마다 몇 %p 흔들림)", min=0, max=1),
+    C("persist_up", "str", desc="확률을 가장 높이는 요인 이름 (없으면 빈칸)"),
+    C("persist_down", "str", desc="확률을 가장 낮추는 요인 이름 (없으면 빈칸)"),
     # 기록
     C("warnings", "str", desc="이 행의 경고, ' | ' 로 연결 (없으면 빈 문자열)", nullable=False),
 ]
 
 RESULT_TABLE = TableSchema(
     name="result_table",
-    version="2.5",
+    version="2.6",
     key=("imo", "year"),
     desc="배·연도별 기준·원인·위치·신호·예측. 웹 JSON과 진단 API는 이 표에서 만들어진다.",
     columns=tuple(_result_cols),
