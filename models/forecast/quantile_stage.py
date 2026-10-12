@@ -21,7 +21,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from contracts.tables import HORIZONS, P_DE_COLS, QUANTILES
+from contracts.tables import HORIZONS, P_DE_COLS, P_MISS_COLS, QUANTILES
 from models.base import FitContext, Stage
 from models.forecast import cii as cii_rules
 from models.forecast import quantile as Q
@@ -37,14 +37,14 @@ class QuantileForecast(Stage):
     def __init__(self, level: str = "sea_eff_kg_nm", prefix: str = "fc", clip_until_year: int = 2021, n_jobs: int | None = None,
                  cii: bool = False, **params):
         """n_jobs: LightGBM 스레드 수 (기본 전부). 표본처럼 작은 데이터는 1~2 가 훨씬 빠르다 (결과에는 영향 없음).
-        cii: True 면 `p_de_h{h}` (h 년 뒤 CII 등급이 D·E 일 확률)도 만든다. CII 는 정박 포함 총량 기준이라
-             level=co2_per_nm_kg 일 때만 뜻이 맞다 (아니면 ValueError)."""
+        cii: True 면 CII 확률도 만든다 — `p_de_h{h}`(h 년 뒤 등급이 D·E 일 확률), `p_miss_h1`(다음 해 감축 요구 미달 확률).
+             CII 는 정박 포함 총량 기준이라 level=co2_per_nm_kg 일 때만 뜻이 맞다 (아니면 ValueError)."""
         if cii and level != "co2_per_nm_kg":
             raise ValueError("CII D·E 확률은 정박 포함 거리당 CO₂(level=co2_per_nm_kg) 예측으로만 계산할 수 있다")
         super().__init__(level=level, prefix=prefix, clip_until_year=clip_until_year, n_jobs=n_jobs, cii=cii, **params)
         self.level, self.prefix, self.clip_until_year, self.n_jobs, self.cii = level, prefix, clip_until_year, n_jobs, cii
         self.requires = (*CORE_REQUIRES, level, *(("cii_ship_type",) if cii else ()))
-        self.produces = (*(f"{prefix}_h{h}_p{q}" for h in HORIZONS for q in QUANTILES), *(P_DE_COLS if cii else ()))
+        self.produces = (*(f"{prefix}_h{h}_p{q}" for h in HORIZONS for q in QUANTILES), *(P_DE_COLS if cii else ()), *(P_MISS_COLS if cii else ()))
         self.feats = NUM + CAT
 
     # ───────────────────────── 학습 ─────────────────────────
@@ -96,6 +96,8 @@ class QuantileForecast(Stage):
             if self.cii:                                                      # P(목표 연도 등급 ≥ D) = 1 − P(Δ ≤ 임계값)
                 thr = cii_rules.threshold(d, f["year"].to_numpy() + h)
                 out.loc[f.index, f"p_de_h{h}"] = 1 - Q.cdf(zq, m, s, thr)
+                if h == 1:                                                    # 다음 해 감축 요구 미달: P(Δ > ln((1−Z(t+1))÷(1−Z(t))))
+                    out.loc[f.index, "p_miss_h1"] = 1 - Q.cdf(zq, m, s, cii_rules.miss_threshold(f["year"].to_numpy()))
         return out.loc[df.index]
 
     def describe(self) -> dict:

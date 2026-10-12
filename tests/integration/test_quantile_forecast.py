@@ -164,3 +164,25 @@ def test_p_de_needs_the_total_efficiency_target():
     from models.forecast.quantile_stage import QuantileForecast
     with pytest.raises(ValueError, match="정박 포함"):
         QuantileForecast(level="sea_eff_kg_nm", prefix="fc", cii=True)
+
+
+# ───────────────────── 감축 요구 미달 확률 (p_miss_h1) ─────────────────────
+def test_p_miss_is_a_probability_that_rises_with_the_predicted_drift(cii_res, cii_snapshot):
+    RESULT_TABLE.validate(cii_res, extra="forbid")
+    assert cii_res["p_miss_h1"].notna().all()
+    assert cii_res["p_miss_h1"].between(0.01 - 1e-12, 0.99 + 1e-12).all()
+    y = cii_res[cii_res["year"] == 2025].merge(cii_snapshot[["imo", "year", "co2_per_nm_kg"]], on=["imo", "year"])
+    drift = np.log(y["fct_h1_p50"] / y["co2_per_nm_kg"])                       # 예측 변화 (양수 = 나빠짐)
+    assert drift.corr(y["p_miss_h1"], method="spearman") > 0.8                # 덜 줄일수록(또는 늘수록) 미달 확률이 높다
+    assert y.loc[drift > drift.quantile(0.9), "p_miss_h1"].mean() > y.loc[drift < drift.quantile(0.1), "p_miss_h1"].mean() + 0.2
+
+
+def test_p_miss_one_ship_equals_full(cii_bundle, cii_snapshot, cii_res):
+    some = cii_snapshot["imo"].drop_duplicates().sample(8, random_state=9)
+    alone = pd.concat([cii_bundle.run(cii_snapshot[cii_snapshot["imo"] == i]) for i in some], ignore_index=True).sort_values(["imo", "year"]).reset_index(drop=True)
+    full = cii_res[cii_res["imo"].isin(some)].sort_values(["imo", "year"]).reset_index(drop=True)
+    pd.testing.assert_series_equal(alone["p_miss_h1"], full["p_miss_h1"], rtol=0, atol=1e-9)
+
+
+def test_p_miss_is_blank_without_the_cii_option(qres):
+    assert qres["p_miss_h1"].isna().all()

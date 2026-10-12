@@ -45,6 +45,9 @@ def main() -> int:
         thr = rc.thr_de(Xh)                                            # 목표 연도에 등급 D·E 가 되기 위한 최소 Δ (결정적 계산)
         out[f"thr_de_{y}"] = thr
         out[f"p_de_{y}"] = 1 - rc.w_cdf(zq, m, s, thr)
+        if h == 1:                                                     # 다음 해 감축 요구 미달 (팀은 1년 뒤만)
+            tm = rc.thr_miss(Xh["year"])
+            out["thr_miss_2026"], out["p_miss_2026"] = tm, 1 - rc.w_cdf(zq, m, s, tm)
         print(f"{y}: 학습 쌍 {int((p['target_year'] <= BASE).sum()):,}, 대표값 중앙값 {np.median(np.exp(m)) - 1:+.4%}")
     out.to_csv(a.out, index=False, encoding="utf-8-sig")
     print("저장:", a.out, out.shape, "/ 피처", len(feats))

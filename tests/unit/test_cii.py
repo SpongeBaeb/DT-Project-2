@@ -48,3 +48,16 @@ def test_unknown_target_year_or_missing_ratio_gives_nan():
     assert np.isnan(cii.threshold(frame(ratio=1.0), [2035])[0])
     assert np.isnan(cii.threshold(frame(ratio=np.nan), [2026])[0])
     assert np.isnan(cii.threshold(frame(ratio=0.0), [2026])[0])
+
+
+def test_miss_threshold_is_the_next_years_required_reduction():
+    t = cii.miss_threshold([2025, 2026, 2024, 2018])
+    assert t[0] == pytest.approx(np.log((1 - 0.11) / (1 - 0.09)))                    # 2025 → 2026: 기준선이 연 2.2% 내려감
+    assert t[1] == pytest.approx(np.log((1 - 0.13625) / (1 - 0.11)))
+    assert t[2] == pytest.approx(np.log((1 - 0.09) / (1 - 0.07)))
+    assert t[3] == pytest.approx(0.0)                                                # 2018 → 2019: 표 첫 해 이전은 Z=0 (팀과 같음)
+    assert (t[:3] < 0).all()                                                         # 요구가 있는 해는 임계값이 음수 (줄여야 함)
+
+
+def test_miss_threshold_is_nan_when_the_next_reduction_is_unknown():
+    assert np.isnan(cii.miss_threshold([2028])[0]) and np.isnan(cii.miss_threshold([2035])[0])

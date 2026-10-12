@@ -9,6 +9,7 @@ CII = CO₂ ÷ (용량 × 거리) ∝ 거리당 CO₂(정박 포함). 그래서 
   - 달성 CII ÷ 기준선₀ = cii_ratio_2026basis × (1 − Z(2026)/100)   (cii_ratio_2026basis = 달성 ÷ 2026년 기준선)
   - Z(y) = 감축률(%). 2026년까지는 팀 파이프라인 규칙, 2027·2028 은 MEPC.400(83) 값 (팀 reg_common.Z_PCT 와 같음)
 확률 = 1 − P(Δ ≤ 임계값) — 임계값에서의 예측 분포 누적 (quantile.cdf, 양끝은 1%·99% 로 자름).
+미달 확률(p_miss_h1)도 같은 형태: 다음 해 감축 요구 ln((1−Z(t+1))÷(1−Z(t))) 를 임계값으로 해서 P(Δ > 임계값).
 
 팀 규칙 파일은 numpy·pandas 만 쓰므로 패키지 이름 충돌 없이 파일 경로로 불러온다 (vendor 원본은 고치지 않는다).
 """
@@ -69,3 +70,17 @@ def threshold(df: pd.DataFrame, target_year: np.ndarray | pd.Series) -> np.ndarr
     zy = np.array([z.get(int(y), np.nan) for y in ty]) / 100
     d3 = d_boundary(df["cii_ship_type"], df["dwt"], df["gt"])
     return np.log(d3) - ln_attained_over_line(df["cii_ratio_2026basis"]) + np.log(1 - zy)
+
+
+def miss_threshold(year: np.ndarray | pd.Series) -> np.ndarray:
+    """다음 해 감축 요구를 채우려면 거리당 CO₂ 의 로그 변화가 이 값 이하여야 한다: ln((1 − Z(t+1)) ÷ (1 − Z(t))).
+    미달 = Δ 가 이 값보다 큼 (요구보다 덜 줄였거나 늘림). 팀 reg_common.thr_miss 와 같다.
+    t 가 감축률 표 첫 해(2019)보다 이르면 Z(t) = 0 (팀과 같음). t+1 의 감축률을 모르면 NaN."""
+    z = z_pct()
+    first = min(z)
+    out = []
+    for t in np.asarray(year, dtype=int):
+        z0 = z.get(int(t), 0.0 if t < first else np.nan) / 100
+        z1 = z.get(int(t) + 1, np.nan) / 100
+        out.append(np.log((1 - z1) / (1 - z0)))
+    return np.array(out, dtype=float)

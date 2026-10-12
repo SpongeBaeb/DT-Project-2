@@ -110,6 +110,16 @@ def main() -> int:
             allok &= bool(ok_thr and ok_p)
             print(f"  D·E 임계값  최대 차이 {thr_diff:.1e}, 빈칸 위치 같음 {nan_same}  {'✅' if ok_thr else '❌'}")
             print(f"  D·E 확률    팀과 평균 차이 {dp:.2e} | 잡음 바닥 평균 {floor_p:.2e}  평균 확률 내 {np.nanmean(p_ours):.3f} / 팀 {np.nanmean(p_team):.3f}  {'✅' if ok_p else '❌'}")
+            if h == 1 and "thr_miss_2026" in team.columns:
+                tm = cii_rules.miss_threshold(x25["year"].to_numpy())
+                tm_team = tt.loc[xh["imo"], "thr_miss_2026"].to_numpy(float)
+                ok_tm = float(np.nanmax(np.abs(tm - tm_team))) < 1e-12
+                pm, pm_n, pm_t = 1 - Q.cdf(zq, m, s, tm), 1 - Q.cdf(zqn, mn, sn, tm), tt.loc[xh["imo"], "p_miss_2026"].to_numpy(float)
+                dpm, fpm = float(np.nanmean(np.abs(pm - pm_t))), float(np.nanmean(np.abs(pm - pm_n)))
+                ok_pm = dpm <= max(2 * fpm, 1e-9)
+                allok &= bool(ok_tm and ok_pm)
+                print(f"  미달 임계값 최대 차이 {float(np.nanmax(np.abs(tm - tm_team))):.1e}  {'✅' if ok_tm else '❌'}")
+                print(f"  미달 확률   팀과 평균 차이 {dpm:.2e} | 잡음 바닥 평균 {fpm:.2e}  평균 확률 내 {np.nanmean(pm):.3f} / 팀 {np.nanmean(pm_t):.3f}  {'✅' if ok_pm else '❌'}")
     print("\n결과:", "✅ 재현 (팀과의 차이가 잡음 바닥 이내)" if allok else "❌ 잡음 바닥을 넘는 차이가 있음")
     return 0 if allok else 1
 
