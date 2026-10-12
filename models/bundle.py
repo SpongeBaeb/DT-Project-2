@@ -12,13 +12,14 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from contracts.tables import CONTRIB_COLS, RESULT_TABLE, SHIP_YEAR
+from contracts.tables import CONTRIB_COLS, RESULT_TABLE, SHIP_YEAR, TOTAL_FORECAST_COLS
 from models.base import FitContext, Stage
 from shared.config import import_object
 from shared.manifest import frame_hash, now_iso
 
 IDENTITY_TOL = 1e-9
 BUNDLE_COLS = {"sea_eff_actual", "berth_actual_t", "vs_peer_pct", "vs_expected_pct", "warnings"}  # 묶음이 직접 채우는 열
+OPTIONAL_COLS = set(TOTAL_FORECAST_COLS)       # 이 열을 만드는 부품이 없으면 빈칸으로 둔다 (결과 표 2.1 의 선택 열)
 RANGE_FEATURES = ("ln_dwt", "avg_speed_kn", "ln_sea_hours", "age", "berth_share", "eu_share")
 
 
@@ -75,7 +76,7 @@ class ModelBundle:
             "ranges": ranges,
             "stages": [s.describe() for s in stages],
             # 부품 일부만 학습한 묶음(비교 실험용)이면 run() 은 결과 표 대신 중간 표를 돌려준다
-            "complete": set(RESULT_TABLE.names) - BUNDLE_COLS <= set(work.columns),
+            "complete": set(RESULT_TABLE.names) - BUNDLE_COLS - OPTIONAL_COLS <= set(work.columns),
             "created_at": now_iso(),
         }
         return cls(stages, meta)
@@ -94,6 +95,8 @@ class ModelBundle:
         if not self.meta.get("complete", True):
             return work
 
+        for c in OPTIONAL_COLS - set(work.columns):
+            work[c] = np.nan
         work["sea_eff_actual"] = work["sea_eff_kg_nm"]
         work["berth_actual_t"] = work["berth_co2_t"]
         work["vs_peer_pct"] = (work["sea_eff_actual"] / work["sea_eff_peer_median"] - 1) * 100

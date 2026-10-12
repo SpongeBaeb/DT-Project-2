@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 
 from contracts.tables import SHIP_YEAR
-from pipeline import sample, specs
+from pipeline import mrv_source, sample, specs
 from shared.config import load_yaml, path
 from shared.manifest import file_hash, frame_hash, write_manifest
 from shared.preprocess import derive, ensure_schema_columns
@@ -117,7 +117,10 @@ def enrich(df: pd.DataFrame, cfg: dict, report: Report) -> pd.DataFrame:
     out = df.merge(spec[specs.SPEC_COLS], on="imo", how="left")
     matched = out["dwt"].notna().groupby(out["imo"]).first().mean()
     report.add("enrich", len(out), spec_match_ratio=round(float(matched), 4))
+    return add_company_history(out)
 
+
+def add_company_history(out: pd.DataFrame) -> pd.DataFrame:
     # 회사: 2024년 이후 값만 있음 → 같은 IMO 의 가장 최근 값을 과거 연도에 연결 ("최근 기준")
     latest_co = out.sort_values("year").dropna(subset=["company"]).groupby("imo")["company"].last()
     out["company"] = out["company"].fillna(out["imo"].map(latest_co))
@@ -170,9 +173,14 @@ def clean_and_derive(df: pd.DataFrame, report: Report) -> pd.DataFrame:
 def run(cfg: dict) -> Path:
     report = Report()
     colmap = load_yaml(cfg["data"]["column_map"])
-    files = download(cfg)
-    df = harmonize(files, colmap, cfg["data"]["ship_types"], report)
-    df = enrich(df, cfg, report)
+    if cfg["data"]["source"] == "mrv_pipeline":
+        # 팀 전처리 파이프라인(vendor/mrv_pipeline)이 이미 열 맞추기·제원·CII 까지 끝낸 결과를 쓴다
+        files, df = mrv_source.load(cfg, colmap, report)
+        df = add_company_history(df)
+    else:
+        files = download(cfg)
+        df = harmonize(files, colmap, cfg["data"]["ship_types"], report)
+        df = enrich(df, cfg, report)
     df = clean_and_derive(df, report)
     df = SHIP_YEAR.validate(df, extra="drop").sort_values(["imo", "year"]).reset_index(drop=True)
 
@@ -197,7 +205,7 @@ def load_snapshot(cfg: dict) -> pd.DataFrame:
     if not p.exists():
         raise FileNotFoundError(f"{p} 가 없습니다. 먼저 python tasks.py pipeline")
     df = pd.read_parquet(p)
-    for c in ("company", "name", "former_names", "ice_class", "source_version", "ship_type"):
+    for c in ("company", "name", "former_names", "ice_class", "source_version", "ship_type", "eedi_kind", "cii_ship_type", "fuel_group"):
         if c in df.columns:
             df[c] = df[c].astype(object).where(df[c].notna(), None)
     df["eedi"] = df["eedi"].astype(float)

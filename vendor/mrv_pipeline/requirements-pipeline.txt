@@ -1,0 +1,7 @@
+# 노트북 환경(.venv)에 이미 있는 패키지들. 없으면 설치
+pandas>=2.2
+openpyxl>=3.1
+pyarrow>=15      # parquet 저장 (없으면 csv만 저장)
+pyyaml>=6        # config/data_sources.yaml 동기화
+requests>=2.31     # MRV 사이트에서 새 버전 다운로드 (크롤러와 같은 패키지)
+beautifulsoup4>=4.12  # --crawl (크롤러와 같은 패키지)

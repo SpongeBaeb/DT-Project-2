@@ -42,12 +42,14 @@ SIGNAL_LABELS = {
 HORIZONS = (1, 2, 3)
 QUANTILES = (10, 50, 90)
 FORECAST_COLS = [f"fc_h{h}_p{q}" for h in HORIZONS for q in QUANTILES]
+# 전체 효율(정박 포함 거리당 CO₂) 예측 — 비용·CII D·E 확률용. 선택 열: 이 예측 부품이 없는 설정에서는 빈칸으로 채워진다
+TOTAL_FORECAST_COLS = [f"fct_h{h}_p{q}" for h in HORIZONS for q in QUANTILES]
 
 
 # ───────────────────── 약속 1: 통합 데이터 (파이프라인 → 모델) ─────────────────────
 SHIP_YEAR = TableSchema(
     name="ship_year",
-    version="1.0",
+    version="1.2",
     key=("imo", "year"),
     desc="MRV 연도별 보고 + 선박 제원을 IMO로 이은 배·연도 표. 파생 변수는 shared/preprocess.derive() 가 만든다.",
     columns=(
@@ -73,7 +75,25 @@ SHIP_YEAR = TableSchema(
         C("length_m", "float", "m", "길이"),
         C("build_year", "int", desc="건조연도", nullable=False, min=1950, max=2100),
         C("ice_class", "str", desc="내빙 등급 (없으면 빈칸)"),
-        C("eedi", "float", "gCO₂/t·nm", "설계 효율 지표(EEDI·EEXI)"),
+        C("eedi", "float", "gCO₂/t·nm", "설계 효율 지표 값 (종류는 eedi_kind)"),
+        C("eedi_kind", "str", desc="설계 효율 지표 종류: EEDI | EEXI | EIV 등 (값이 없으면 빈칸). 값의 수준이 종류마다 달라 모델이 구분해 쓴다"),
+        C("cii_ship_type", "str", desc="CII 선종 구분 (팀 파이프라인 10단계)"),
+        C("cii_capacity", "float", desc="CII 용량: 선종에 따라 재화중량 또는 총톤수 (팀 파이프라인 10단계)", min=0),
+        C("hsc_proxy", "bool", desc="고속선 추정 (로팩스 등, 팀 파이프라인 10단계)", nullable=False),
+        C("fuel_group", "str", desc="연료 그룹: 석유계 | LNG 계열 | LPG 추정 | 기타 대체연료 | 대체연료(구분 불가) (팀 파이프라인 8-4)"),
+        # 예측 모델이 쓰는 품질·CII·적재량 열 (팀 파이프라인 결과)
+        C("mm_a", "bool", desc="측정 방식 A (MRV 모니터링 방식)", nullable=False),
+        C("mm_b", "bool", desc="측정 방식 B", nullable=False),
+        C("mm_c", "bool", desc="측정 방식 C", nullable=False),
+        C("co2_recovered", "bool", desc="총 CO₂ 보정 이력 (팀 파이프라인 3-4)", nullable=False),
+        C("co2_parts_bad", "bool", desc="항해 유형별 CO₂ 합이 총량과 안 맞음", nullable=False),
+        C("cii_type_changed", "bool", desc="전년 대비 CII 선종 구분이 바뀜", nullable=False),
+        C("cii_ratio_2026basis", "float", desc="2026년 기준선 대비 달성 CII 비율 (1 = 기준선, 낮을수록 좋음)", min=0),
+        C("cii_rating", "str", desc="그해 기준 CII 등급 A~E"),
+        C("cii_rating_2026basis", "str", desc="2026년 기준 CII 등급 A~E"),
+        C("avg_load", "float", desc="평균 적재량 (기준은 avg_load_basis: 톤, 부피, 인원 등)", min=0),
+        C("avg_load_basis", "str", desc="avg_load 의 기준: mass | dwt | volume 등"),
+        C("avg_load_invalid", "bool", desc="적재량이 실을 수 있는 양을 넘는 등 유효하지 않음", nullable=False),
         # 파생 (shared/preprocess.derive)
         C("distance_nm", "float", "nm", "항해 거리 = co2_t×1000 ÷ co2_per_nm_kg (역산)", nullable=False, min=0),
         C("sea_eff_kg_nm", "float", "kg/nm", "해상 효율 = (CO₂−정박 CO₂)×1000 ÷ 거리. 핵심 지표", nullable=False, min=0),
@@ -132,13 +152,15 @@ _result_cols = [
     C("ops_outlier", "bool", desc="운항 군집 어느 중심에서도 먼 배", nullable=False),
     # 1~3년 예측 (해상 효율, 분위 p10/p50/p90 은 p10 ≤ p50 ≤ p90 보장)
     *[C(c, "float", "kg/nm", f"{c[4]}년 뒤 해상 효율 {c[-3:]}", min=0) for c in FORECAST_COLS],
+    # 1~3년 예측 (정박 포함 거리당 CO₂, 같은 분위). 선택 열 (비용·CII 용)
+    *[C(c, "float", "kg/nm", f"{c[5]}년 뒤 전체 효율(정박 포함 거리당 CO₂) {c[-3:]}", min=0) for c in TOTAL_FORECAST_COLS],
     # 기록
     C("warnings", "str", desc="이 행의 경고, ' | ' 로 연결 (없으면 빈 문자열)", nullable=False),
 ]
 
 RESULT_TABLE = TableSchema(
     name="result_table",
-    version="2.0",
+    version="2.1",
     key=("imo", "year"),
     desc="배·연도별 기준·원인·위치·신호·예측. 웹 JSON과 진단 API는 이 표에서 만들어진다.",
     columns=tuple(_result_cols),

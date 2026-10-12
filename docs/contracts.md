@@ -2,7 +2,7 @@
 
 원본: `contracts/tables.py`, `contracts/api.py`. 바꾸면 버전을 올리고 받는 사람에게 알린다.
 
-## ship_year (형식 1.0)
+## ship_year (형식 1.2)
 
 MRV 연도별 보고 + 선박 제원을 IMO로 이은 배·연도 표. 파생 변수는 shared/preprocess.derive() 가 만든다.
 
@@ -29,7 +29,24 @@ MRV 연도별 보고 + 선박 제원을 IMO로 이은 배·연도 표. 파생 �
 | `length_m` | float | m | 허용 |  | 길이 |
 | `build_year` | int |  | 금지 | 1950 ~ 2100 | 건조연도 |
 | `ice_class` | str |  | 허용 |  | 내빙 등급 (없으면 빈칸) |
-| `eedi` | float | gCO₂/t·nm | 허용 |  | 설계 효율 지표(EEDI·EEXI) |
+| `eedi` | float | gCO₂/t·nm | 허용 |  | 설계 효율 지표 값 (종류는 eedi_kind) |
+| `eedi_kind` | str |  | 허용 |  | 설계 효율 지표 종류: EEDI | EEXI | EIV 등 (값이 없으면 빈칸). 값의 수준이 종류마다 달라 모델이 구분해 쓴다 |
+| `cii_ship_type` | str |  | 허용 |  | CII 선종 구분 (팀 파이프라인 10단계) |
+| `cii_capacity` | float |  | 허용 | 0 ~  | CII 용량: 선종에 따라 재화중량 또는 총톤수 (팀 파이프라인 10단계) |
+| `hsc_proxy` | bool |  | 금지 |  | 고속선 추정 (로팩스 등, 팀 파이프라인 10단계) |
+| `fuel_group` | str |  | 허용 |  | 연료 그룹: 석유계 | LNG 계열 | LPG 추정 | 기타 대체연료 | 대체연료(구분 불가) (팀 파이프라인 8-4) |
+| `mm_a` | bool |  | 금지 |  | 측정 방식 A (MRV 모니터링 방식) |
+| `mm_b` | bool |  | 금지 |  | 측정 방식 B |
+| `mm_c` | bool |  | 금지 |  | 측정 방식 C |
+| `co2_recovered` | bool |  | 금지 |  | 총 CO₂ 보정 이력 (팀 파이프라인 3-4) |
+| `co2_parts_bad` | bool |  | 금지 |  | 항해 유형별 CO₂ 합이 총량과 안 맞음 |
+| `cii_type_changed` | bool |  | 금지 |  | 전년 대비 CII 선종 구분이 바뀜 |
+| `cii_ratio_2026basis` | float |  | 허용 | 0 ~  | 2026년 기준선 대비 달성 CII 비율 (1 = 기준선, 낮을수록 좋음) |
+| `cii_rating` | str |  | 허용 |  | 그해 기준 CII 등급 A~E |
+| `cii_rating_2026basis` | str |  | 허용 |  | 2026년 기준 CII 등급 A~E |
+| `avg_load` | float |  | 허용 | 0 ~  | 평균 적재량 (기준은 avg_load_basis: 톤, 부피, 인원 등) |
+| `avg_load_basis` | str |  | 허용 |  | avg_load 의 기준: mass | dwt | volume 등 |
+| `avg_load_invalid` | bool |  | 금지 |  | 적재량이 실을 수 있는 양을 넘는 등 유효하지 않음 |
 | `distance_nm` | float | nm | 금지 | 0 ~  | 항해 거리 = co2_t×1000 ÷ co2_per_nm_kg (역산) |
 | `sea_eff_kg_nm` | float | kg/nm | 금지 | 0 ~  | 해상 효율 = (CO₂−정박 CO₂)×1000 ÷ 거리. 핵심 지표 |
 | `avg_speed_kn` | float | kn | 금지 | 0 ~  | 평균 속력 = 거리 ÷ 해상 시간 (대기 포함, 역산) |
@@ -44,7 +61,7 @@ MRV 연도별 보고 + 선박 제원을 IMO로 이은 배·연도 표. 파생 �
 | `cii_attained` | float | g/(t·nm) | 허용 |  | CII 근사 = CO₂ ÷ (재화중량 × 거리). 배경 비교용 |
 | `source_version` | str |  | 금지 |  | 원본 파일 판 번호 |
 
-## result_table (형식 2.0)
+## result_table (형식 2.1)
 
 배·연도별 기준·원인·위치·신호·예측. 웹 JSON과 진단 API는 이 표에서 만들어진다.
 
@@ -98,6 +115,15 @@ MRV 연도별 보고 + 선박 제원을 IMO로 이은 배·연도 표. 파생 �
 | `fc_h3_p10` | float | kg/nm | 허용 | 0 ~  | 3년 뒤 해상 효율 p10 |
 | `fc_h3_p50` | float | kg/nm | 허용 | 0 ~  | 3년 뒤 해상 효율 p50 |
 | `fc_h3_p90` | float | kg/nm | 허용 | 0 ~  | 3년 뒤 해상 효율 p90 |
+| `fct_h1_p10` | float | kg/nm | 허용 | 0 ~  | 1년 뒤 전체 효율(정박 포함 거리당 CO₂) p10 |
+| `fct_h1_p50` | float | kg/nm | 허용 | 0 ~  | 1년 뒤 전체 효율(정박 포함 거리당 CO₂) p50 |
+| `fct_h1_p90` | float | kg/nm | 허용 | 0 ~  | 1년 뒤 전체 효율(정박 포함 거리당 CO₂) p90 |
+| `fct_h2_p10` | float | kg/nm | 허용 | 0 ~  | 2년 뒤 전체 효율(정박 포함 거리당 CO₂) p10 |
+| `fct_h2_p50` | float | kg/nm | 허용 | 0 ~  | 2년 뒤 전체 효율(정박 포함 거리당 CO₂) p50 |
+| `fct_h2_p90` | float | kg/nm | 허용 | 0 ~  | 2년 뒤 전체 효율(정박 포함 거리당 CO₂) p90 |
+| `fct_h3_p10` | float | kg/nm | 허용 | 0 ~  | 3년 뒤 전체 효율(정박 포함 거리당 CO₂) p10 |
+| `fct_h3_p50` | float | kg/nm | 허용 | 0 ~  | 3년 뒤 전체 효율(정박 포함 거리당 CO₂) p50 |
+| `fct_h3_p90` | float | kg/nm | 허용 | 0 ~  | 3년 뒤 전체 효율(정박 포함 거리당 CO₂) p90 |
 | `warnings` | str |  | 금지 |  | 이 행의 경고, ' | ' 로 연결 (없으면 빈 문자열) |
 
 ## 원인 막대 요인

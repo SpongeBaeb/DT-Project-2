@@ -43,8 +43,16 @@
 - 위치(z)의 EU 구간 가중치는 `models/common/position.py`.
 - 원인 이름(`size`, `speed_pattern` …)은 `contracts/tables.py: CAUSE_FACTORS`. 새 요인이 필요하면 거기 추가 → 결과 표 형식 2.1.
 
+- **공통잔차 모델(연결됨)**: 기존 `공통잔차/common_residual.py` 는 `experiments/A-0_common_residual/` 에 보관하고, Stage 로 옮긴 것이 `models/common/common_residual.py: CommonResidualBaseline` 이다. `config/exp_common_residual.yaml`(합성 표본) 또는 `config/mrv_pipeline.yaml`(팀 전처리 파이프라인 결과)로 돌려 본다.
+  - 실제 데이터(팀 전처리 파이프라인 결과): 이미 만든 `mrv_merged.parquet`(또는 csv)가 있으면 `MRV_MERGED_PATH=<경로> uv run python tasks.py pipeline --config config/mrv_pipeline.yaml`. 없으면 같은 명령이 `vendor/mrv_pipeline` 을 실행해 만든다 (MRV 사이트 다운로드는 설정 `data.team_pipeline.fetch: true` 일 때만). 이어서 `build`/`evaluate` 에 같은 `--config`.
+  - 줄여 잡은 평균 위치: `models/common/position.py: EmpiricalBayesPosition`.
+  - 신판(형식 1.0) 반영: 내빙 둘, 설계 종류(EEDI/EEXI/없음), 선종 간 기울기 공유(`pooling`, 끄려면 `params: {pooling: false}`), 크기 변수는 `size`(기본 `ln_dwt`, 팀 설정 `ln_cii_capacity`)와 `PeerGroup` 의 `size_col` 을 같이 바꾼다.
+  - 막대 오차 `cause_se(df)`, 부호 점검용 계수표 `coefficient_table()` 는 결과 표 약속에 없는 보조 출력이다 (화면에 쓰려면 결과 표 2.1 합의).
+  - 속력 막대를 "대기 추정"으로 부를 선종은 `type_info[선종]["speed_is_wait"]` (탄력성 ≤ 0.1).
+
 ### 장원우 — 예측·화면
 - **예측**: `models/forecast/persistence.py` 가 비교 기준(변화 없음). LightGBM 분위 회귀는 같은 파일 설명대로 새 클래스. `enforce_monotone()` 을 꼭 통과, `deterministic=True`.
+  - **예측(구현됨)**: `models/forecast/quantile_stage.py: QuantileForecast` (회귀 v4 이식). 팀 설정 `config/mrv_pipeline.yaml` 은 이 부품을 두 번 쓴다 — `{level: sea_eff_kg_nm, prefix: fc}`(해상 효율, 진단·위치·'앞으로') 와 `{level: co2_per_nm_kg, prefix: fct}`(전체 효율, 비용·CII D·E 확률). 피처는 `features.py`(팀 `features_v1.csv` 와 대조 검증), 분위수·보정 함수는 `quantile.py`. 검증·비교 스크립트는 `experiments/A-1_forecast_features/`. LightGBM 은 학습표의 마지막 자리 반올림에도 예측이 평균 3e-3 쯤 달라지는 잡음이 있어 재현 기준은 '잡음 바닥 이내'다.
 - **화면**: `web/src/components/DiagnosisView.tsx` 의 ①~⑥ 칸. 타입은 `web/src/api/types.ts` (자동 생성)만 쓴다. 약속이 바뀌면 `uv run python tasks.py schema` → 타입 오류가 고칠 곳을 알려 준다.
 
 ### 박준재 — API

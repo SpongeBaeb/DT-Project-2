@@ -36,7 +36,11 @@ def baseline_r2(df: pd.DataFrame, cfg: dict, acc: dict) -> dict[str, Any]:
     specs = cfg["stages"]
     k = _stage_index(specs, "sea_eff_expected")
     ref_specs = [dict(s) for s in specs[: k + 1]]
-    ref_specs[k] = {**ref_specs[k], "params": {**ref_specs[k].get("params", {}), "features": acc["baseline"]["reference_features"]}}
+    ref_feats = dict(acc["baseline"]["reference_features"])
+    size_var = specs[k].get("params", {}).get("size")           # 모델이 크기 변수를 바꿨으면(예: ln_cii_capacity) 비교 기준도 같은 크기 변수로
+    if size_var:
+        ref_feats = {(size_var if cause == "size" else f): cause for f, cause in ref_feats.items()}
+    ref_specs[k] = {**ref_specs[k], "params": {**ref_specs[k].get("params", {}), "features": ref_feats}}
 
     folds = GroupKFold(n_splits=acc["baseline"]["folds"])
     out = {"model": [], "reference": []}

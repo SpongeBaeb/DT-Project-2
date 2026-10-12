@@ -13,3 +13,9 @@ web/dist/
 web/public/data/
 .pytest_cache/
 *.egg-info/
+
+# 팀 MRV 전처리 파이프라인 실행 결과 (vendor/mrv_pipeline 은 코드만 올림)
+vendor/mrv_pipeline/data/
+vendor/mrv_pipeline/reports/
+data/mrv_pipeline/
+reports/

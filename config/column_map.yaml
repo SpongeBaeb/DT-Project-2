@@ -38,6 +38,16 @@ ship_types:
   Bulk: bulk
   Ro-pax ship: ro_pax
   Ro-Pax: ro_pax
+  # 선종 13개를 쓰는 설정(config/mrv_pipeline.yaml, 팀 전처리 파이프라인 결과)용
+  Chemical tanker: chemical_tanker
+  General cargo ship: general_cargo
+  Vehicle carrier: vehicle_carrier
+  Gas carrier: gas_carrier
+  LNG carrier: lng_carrier
+  Ro-ro ship: ro_ro
+  Refrigerated cargo carrier: reefer
+  Cruise passenger ship: cruise
+  Container/ro-ro cargo ship: container_ro_ro
 
 # 연도별 엑셀 읽기 옵션 (실제 MRV 파일은 위쪽에 제목 행이 있음 → header_row 로 지정)
 read_options:
