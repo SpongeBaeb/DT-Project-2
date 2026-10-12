@@ -2,7 +2,7 @@
 
 원본: `contracts/tables.py`, `contracts/api.py`. 바꾸면 버전을 올리고 받는 사람에게 알린다.
 
-## ship_year (형식 1.3)
+## ship_year (형식 1.4)
 
 MRV 연도별 보고 + 선박 제원을 IMO로 이은 배·연도 표. 파생 변수는 shared/preprocess.derive() 가 만든다.
 
@@ -22,6 +22,8 @@ MRV 연도별 보고 + 선박 제원을 IMO로 이은 배·연도 표. 파생 �
 | `co2_per_nm_kg` | float | kg/nm | 금지 | 0 ~  | 보고된 거리당 CO₂ |
 | `sea_hours` | float | h | 금지 | 0 ~  | EU 관련 해상 시간 |
 | `co2_intra_eu_t` | float | t | 허용 |  | EU 역내 항해 CO₂ |
+| `co2_from_eu_t` | float | t | 허용 | 0 ~  | EU 항구에서 출항해 EU 밖으로 가는 항해 CO₂ (이상 운항 지표용) |
+| `co2_to_eu_t` | float | t | 허용 | 0 ~  | EU 밖에서 EU 항구로 입항하는 항해 CO₂ (이상 운항 지표용) |
 | `ets_co2_t` | float | t | 허용 |  | ETS 대상 CO₂ (2024~) |
 | `ets_co2eq_t` | float | t | 허용 | 0 ~  | ETS 대상 CO₂eq (CH₄·N₂O 포함, 2026년 비용부터 사용) |
 | `cargo_t` | float | t | 허용 |  | 평균 적재량 |
@@ -62,7 +64,7 @@ MRV 연도별 보고 + 선박 제원을 IMO로 이은 배·연도 표. 파생 �
 | `cii_attained` | float | g/(t·nm) | 허용 |  | CII 근사 = CO₂ ÷ (재화중량 × 거리). 배경 비교용 |
 | `source_version` | str |  | 금지 |  | 원본 파일 판 번호 |
 
-## result_table (형식 2.4)
+## result_table (형식 2.5)
 
 배·연도별 기준·원인·위치·신호·예측. 웹 JSON과 진단 API는 이 표에서 만들어진다.
 
@@ -104,8 +106,8 @@ MRV 연도별 보고 + 선박 제원을 IMO로 이은 배·연도 표. 파생 �
 | `sig_report` | bool |  | 금지 |  | 보고 값이 물리적으로 불가능 |
 | `sig_special` | bool |  | 금지 |  | 특수 운항 집단 |
 | `sig_any` | bool |  | 금지 |  | 착시 신호 하나 이상 |
-| `type_exposure` | int |  | 허용 | 1 ~ 3 | EU 규제 노출도 유형 1~3 |
-| `type_age_design` | int |  | 허용 | 1 ~ 3 | 선령·설계 유형 1~3 |
+| `type_exposure` | int |  | 허용 | 1 ~ 3 | EU 규제 노출도 유형 1~3 (1 역내 운항선, 2 정기 기항선, 3 비정기 기항선) |
+| `type_age_design` | int |  | 허용 | 1 ~ 3 | 선령·설계 유형 1~3 (1 고효율형, 2 일반형, 3 고선령형). 설계 효율 값이 없으면 빈칸 |
 | `ops_outlier` | bool |  | 금지 |  | 운항 군집 어느 중심에서도 먼 배 |
 | `fc_h1_p10` | float | kg/nm | 허용 | 0 ~  | 1년 뒤 해상 효율 p10 |
 | `fc_h1_p50` | float | kg/nm | 허용 | 0 ~  | 1년 뒤 해상 효율 p50 |
@@ -129,6 +131,8 @@ MRV 연도별 보고 + 선박 제원을 IMO로 이은 배·연도 표. 파생 �
 | `p_de_h2` | float |  | 허용 | 0 ~ 1 | 2년 뒤 CII 등급이 D·E 일 확률 |
 | `p_de_h3` | float |  | 허용 | 0 ~ 1 | 3년 뒤 CII 등급이 D·E 일 확률 |
 | `p_miss_h1` | float |  | 허용 | 0 ~ 1 | 1년 뒤 CII 감축 요구를 채우지 못할 확률 (해당 해 기준선 하락분보다 덜 줄이거나 늘림) |
+| `type_exposure_prob` | float |  | 허용 | 0 ~ 1 | 노출도 유형의 가장 높은 소속 확률 (0.6 미만 = 경계) |
+| `type_age_design_prob` | float |  | 허용 | 0 ~ 1 | 선령·설계 유형의 가장 높은 소속 확률 (0.6 미만 = 경계, 유형이 없으면 빈칸) |
 | `list_h1` | str |  | 허용 |  | 다음 해 리스트: target(영업 타깃) | watch(관찰) | 빈칸 (팀 04_final 셀 [3] 규칙, 기준 p* 는 학습 때 고정) |
 | `warnings` | str |  | 금지 |  | 이 행의 경고, ' | ' 로 연결 (없으면 빈 문자열) |
 

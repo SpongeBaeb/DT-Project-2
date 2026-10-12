@@ -27,7 +27,7 @@
 - **실제 MRV**: `config/default.yaml` 에서 `data.source: mrv`. 연도별 파일을 `data/raw/mrv/mrv_<연도>_v<판>.xlsx` 로 두면 `pipeline/run.py: download_mrv()` 가 읽는다. 자동 다운로드는 이 함수에 구현.
 - **열 이름**: 새 판에서 바뀌면 `config/column_map.yaml` 에 한 줄 추가 (코드 수정 없음). 엑셀 제목 행은 `read_options` 의 `header_row`.
 - **제원**: `pipeline/specs.py: fetch_one()` 만 구현. 캐시·요청 간격·실패 목록은 이미 있다. 약관·robots.txt 먼저 확인.
-- **군집**: `models/cluster/stub.py` 의 `TertileTypes` 와 같은 `produces` 로 K-평균·이상 운항 부품을 만든다.
+- **군집(구현됨)**: `models/cluster/team.py` — `TeamTypes`(노출도 × 선령·설계 두 축 유형, 소속 확률) 와 `OpsAnomaly`(이상 운항). 팀 설정 `config/mrv_pipeline.yaml` 이 임시 부품 `TertileTypes` 대신 이 둘을 쓴다. 군집 중심·기준값은 학습 때 고정되므로 한 척만 넣어도 결과 표와 같다. 팀 노트북 숫자와의 대조는 `experiments/A-3_cluster/verify_cluster.py`. 아직 없는 것: 운항 변화 사건(03 노트북), 회사 카드(05).
 - 확인: `data/snapshots/ship_year.manifest.json` 의 `steps` 에 단계별 행 수·버린 이유가 남는다.
 
 ### 배성우 — 같은 조건 기준 모델·정박·위치

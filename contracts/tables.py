@@ -50,12 +50,14 @@ P_DE_COLS = [f"p_de_h{h}" for h in HORIZONS]
 P_MISS_COLS = ["p_miss_h1"]
 # 다음 해 리스트 (영업 타깃 / 관찰). 선택 열
 LIST_COLS = ["list_h1"]
+# 유형 소속 확률 (가장 높은 확률, 0.6 미만이면 경계에 있는 배). 선택 열
+TYPE_PROB_COLS = ["type_exposure_prob", "type_age_design_prob"]
 
 
 # ───────────────────── 약속 1: 통합 데이터 (파이프라인 → 모델) ─────────────────────
 SHIP_YEAR = TableSchema(
     name="ship_year",
-    version="1.3",
+    version="1.4",
     key=("imo", "year"),
     desc="MRV 연도별 보고 + 선박 제원을 IMO로 이은 배·연도 표. 파생 변수는 shared/preprocess.derive() 가 만든다.",
     columns=(
@@ -73,6 +75,8 @@ SHIP_YEAR = TableSchema(
         C("co2_per_nm_kg", "float", "kg/nm", "보고된 거리당 CO₂", nullable=False, min=0),
         C("sea_hours", "float", "h", "EU 관련 해상 시간", nullable=False, min=0),
         C("co2_intra_eu_t", "float", "t", "EU 역내 항해 CO₂"),
+        C("co2_from_eu_t", "float", "t", "EU 항구에서 출항해 EU 밖으로 가는 항해 CO₂ (이상 운항 지표용)", min=0),
+        C("co2_to_eu_t", "float", "t", "EU 밖에서 EU 항구로 입항하는 항해 CO₂ (이상 운항 지표용)", min=0),
         C("ets_co2_t", "float", "t", "ETS 대상 CO₂ (2024~)"),
         C("ets_co2eq_t", "float", "t", "ETS 대상 CO₂eq (CH₄·N₂O 포함, 2026년 비용부터 사용)", min=0),
         C("cargo_t", "float", "t", "평균 적재량"),
@@ -154,8 +158,8 @@ _result_cols = [
     *[C(c, "bool", desc=SIGNAL_LABELS[c], nullable=False) for c in SIGNAL_COLS],
     C("sig_any", "bool", desc="착시 신호 하나 이상", nullable=False),
     # 선박 유형 (5-4절)
-    C("type_exposure", "int", desc="EU 규제 노출도 유형 1~3", min=1, max=3),
-    C("type_age_design", "int", desc="선령·설계 유형 1~3", min=1, max=3),
+    C("type_exposure", "int", desc="EU 규제 노출도 유형 1~3 (1 역내 운항선, 2 정기 기항선, 3 비정기 기항선)", min=1, max=3),
+    C("type_age_design", "int", desc="선령·설계 유형 1~3 (1 고효율형, 2 일반형, 3 고선령형). 설계 효율 값이 없으면 빈칸", min=1, max=3),
     C("ops_outlier", "bool", desc="운항 군집 어느 중심에서도 먼 배", nullable=False),
     # 1~3년 예측 (해상 효율, 분위 p10/p50/p90 은 p10 ≤ p50 ≤ p90 보장)
     *[C(c, "float", "kg/nm", f"{c[4]}년 뒤 해상 효율 {c[-3:]}", min=0) for c in FORECAST_COLS],
@@ -165,6 +169,9 @@ _result_cols = [
     *[C(c, "float", "", f"{c[-1]}년 뒤 CII 등급이 D·E 일 확률", min=0, max=1) for c in P_DE_COLS],
     # 다음 해 감축 요구 미달 확률: P(거리당 CO₂ 로그 변화 > ln((1−Z(t+1))÷(1−Z(t)))). 선택 열
     C("p_miss_h1", "float", "", "1년 뒤 CII 감축 요구를 채우지 못할 확률 (해당 해 기준선 하락분보다 덜 줄이거나 늘림)", min=0, max=1),
+    # 유형 소속 확률: 중심까지 거리로 계산한 근사값(진짜 확률 아님). 0.6 미만이면 경계에 있는 배 (팀 기준). 선택 열
+    C("type_exposure_prob", "float", desc="노출도 유형의 가장 높은 소속 확률 (0.6 미만 = 경계)", min=0, max=1),
+    C("type_age_design_prob", "float", desc="선령·설계 유형의 가장 높은 소속 확률 (0.6 미만 = 경계, 유형이 없으면 빈칸)", min=0, max=1),
     # 다음 해 리스트: target(영업 타깃: 다음 해 D·E 확률 ≥ 0.8) | watch(관찰: 지금 A~C 이고 미달 확률 상위 25%) | 빈칸. 선택 열
     C("list_h1", "str", desc="다음 해 리스트: target(영업 타깃) | watch(관찰) | 빈칸 (팀 04_final 셀 [3] 규칙, 기준 p* 는 학습 때 고정)"),
     # 기록
@@ -173,7 +180,7 @@ _result_cols = [
 
 RESULT_TABLE = TableSchema(
     name="result_table",
-    version="2.4",
+    version="2.5",
     key=("imo", "year"),
     desc="배·연도별 기준·원인·위치·신호·예측. 웹 JSON과 진단 API는 이 표에서 만들어진다.",
     columns=tuple(_result_cols),

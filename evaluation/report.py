@@ -122,7 +122,8 @@ def cluster_stability(df: pd.DataFrame, cfg: dict, acc: dict) -> dict[str, Any]:
     for seed in (cfg["train"]["seed"], cfg["train"]["seed"] + 1):
         c = {**cfg, "train": {**cfg["train"], "seed": seed}}
         labels.append(ModelBundle.train(df, c).run(df)[["type_exposure", "type_age_design"]])
-    return {f"ari_{col}": float(adjusted_rand_score(labels[0][col].astype(int), labels[1][col].astype(int)))
+    # 유형이 없는 배(예: 설계 효율 값이 없어 선령·설계 유형이 빈칸)는 '없음'이라는 하나의 범주(0)로 본다
+    return {f"ari_{col}": float(adjusted_rand_score(labels[0][col].fillna(0).astype(int), labels[1][col].fillna(0).astype(int)))
             for col in ("type_exposure", "type_age_design")}
 
 
