@@ -15,7 +15,7 @@ import pandas as pd
 
 from models.forecast.lists import LISTS
 
-KEEP = ["imo", "name", "ship_type", "company", "cii_rating"]
+KEEP = ["imo", "name", "company", "cii_rating"]                    # 결과 표에 이미 있는 열(ship_type 등)은 스냅샷에서 다시 가져오지 않는다 (병합 때 이름이 겹침)
 
 
 def build_list(results: pd.DataFrame, snapshot: pd.DataFrame, year: int | None = None) -> tuple[pd.DataFrame, int]:

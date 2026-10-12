@@ -59,7 +59,7 @@ def test_describe_records_the_frozen_threshold():
 # ───────────────────────── 산출물: 순위 ─────────────────────────
 def _results():
     return pd.DataFrame({
-        "imo": [5, 1, 3, 2, 4, 6], "year": [2025] * 6,
+        "imo": [5, 1, 3, 2, 4, 6], "year": [2025] * 6, "ship_type": ["tanker"] * 6,        # 실제 결과 표처럼 ship_type 이 이미 있다 (스냅샷과 겹침 방지)
         "list_h1": ["target", "target", "watch", "target", "", "watch"], "p_de_h1": [0.9, 0.95, 0.3, 0.9, 0.1, 0.4],
         "p_de_h2": [0.5] * 6, "p_de_h3": [0.6] * 6, "p_miss_h1": [0.5, 0.5, 0.8, 0.5, 0.2, 0.9], "fct_h1_p50": [440.0] * 6,
     })
