@@ -1,0 +1,24 @@
+# 5-2절 합격 기준. evaluation/report.py 가 계산하고 tests/acceptance 가 판정한다.
+# 기준을 바꾸려면 팀 합의 후 여기만 고친다 (결정 기록 docs/decisions.md 에 이유 남기기).
+
+baseline:
+  folds: 5
+  reference_features: {ln_dwt: size}   # 비교 기준 = 크기만 보정
+  min_r2_gain: 0.05                    # 처음 보는 배 R²가 기준보다 0.05 이상 높아야
+
+position:
+  select_until: 2023                   # 2023년까지 자료로 학습·선정
+  check_years: [2024, 2025]            # 다음 두 해 확인
+  persist_gap: 0.10                    # 같은 조건보다 10% 넘게 더 쓰면 "유지"
+  min_gain_vs_single_pp: 5        # 한 해 기준보다 5%p 이상
+  min_ratio_vs_random: 2.0             # 무작위의 2배 이상
+
+forecast:
+  train_until: 2022
+  base_year: 2023
+  target_years: [2024, 2025]
+  min_mae_gain: 0.10                   # 변화 없음보다 MAE 10% 이상 낮게
+  coverage_range: [0.75, 0.85]         # 80% 구간 적중률
+
+cluster:
+  min_ari: 0.8

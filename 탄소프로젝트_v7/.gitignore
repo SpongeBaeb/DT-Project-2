@@ -1,0 +1,18 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# 재생성 가능한 데이터 (README 의 재현 절차 참고). MANIFEST.json 은 출처·버전 기록이라 남긴다
+data/raw/*
+!data/raw/MANIFEST.json
+data/interim/
+data/db/
+
+# 인증키 등
+.env
+
+# 웹사이트 빌드 산출물
+web/node_modules/
+web/dist/
+web_v2/node_modules/
+web_v2/dist/

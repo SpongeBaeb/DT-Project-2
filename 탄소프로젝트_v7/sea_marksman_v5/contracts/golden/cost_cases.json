@@ -1,0 +1,215 @@
+{
+ "_note": "비용 계산 기준 사례. calc.ts(vitest)가 이 값과 상대오차 1e-9 이내로 맞아야 한다. 값은 Python 으로 독립 계산.",
+ "cases": [
+  {
+   "name": "TIGANI형 2025",
+   "kind": "annualCost",
+   "ship": {
+    "year": 2025,
+    "seaEffKgNm": 437.0,
+    "distanceNm": 60000.0,
+    "berthT": 9202.0,
+    "co2PerFuel": 3.17,
+    "etsShare": 0.75
+   },
+   "prices": {
+    "fuelUsdPerT": 620.0,
+    "euaEurPerT": 72.0,
+    "krwPerUsd": 1380.0,
+    "krwPerEur": 1500.0,
+    "asOf": "2026-10-01"
+   },
+   "expected": {
+    "co2T": 35422.0,
+    "fuelT": 11174.132492113566,
+    "fuelCostKrw": 9560587760.252367,
+    "etsCostKrw": 2008427399.9999998,
+    "totalKrw": 11569015160.252367
+   }
+  },
+  {
+   "name": "부과 전 2023 (탄소비 0)",
+   "kind": "annualCost",
+   "ship": {
+    "year": 2023,
+    "seaEffKgNm": 437.0,
+    "distanceNm": 60000.0,
+    "berthT": 9202.0,
+    "co2PerFuel": 3.17,
+    "etsShare": 0.75
+   },
+   "prices": {
+    "fuelUsdPerT": 620.0,
+    "euaEurPerT": 72.0,
+    "krwPerUsd": 1380.0,
+    "krwPerEur": 1500.0,
+    "asOf": "2026-10-01"
+   },
+   "expected": {
+    "co2T": 35422.0,
+    "fuelT": 11174.132492113566,
+    "fuelCostKrw": 9560587760.252367,
+    "etsCostKrw": 0.0,
+    "totalKrw": 9560587760.252367
+   }
+  },
+  {
+   "name": "2026 정박 0",
+   "kind": "annualCost",
+   "ship": {
+    "year": 2026,
+    "seaEffKgNm": 437.0,
+    "distanceNm": 60000.0,
+    "berthT": 0.0,
+    "co2PerFuel": 3.17,
+    "etsShare": 0.75
+   },
+   "prices": {
+    "fuelUsdPerT": 620.0,
+    "euaEurPerT": 72.0,
+    "krwPerUsd": 1380.0,
+    "krwPerEur": 1500.0,
+    "asOf": "2026-10-01"
+   },
+   "expected": {
+    "co2T": 26220.0,
+    "fuelT": 8271.293375394322,
+    "fuelCostKrw": 7076918611.987382,
+    "etsCostKrw": 2123820000.0,
+    "totalKrw": 9200738611.987381
+   }
+  },
+  {
+   "name": "동급 중간 393 대비",
+   "kind": "gapToPeerCost",
+   "ship": {
+    "year": 2025,
+    "seaEffKgNm": 437.0,
+    "distanceNm": 60000.0,
+    "berthT": 9202.0,
+    "co2PerFuel": 3.17,
+    "etsShare": 0.75
+   },
+   "peerMedianKgNm": 393.0,
+   "prices": {
+    "fuelUsdPerT": 620.0,
+    "euaEurPerT": 72.0,
+    "krwPerUsd": 1380.0,
+    "krwPerEur": 1500.0,
+    "asOf": "2026-10-01"
+   },
+   "expected": {
+    "co2T": 2640.0,
+    "fuelT": 832.8075709779187,
+    "fuelCostKrw": 712550157.7287083,
+    "etsCostKrw": 149688000.0,
+    "totalKrw": 862238157.7287083
+   }
+  },
+  {
+   "name": "개조 회수",
+   "kind": "payback",
+   "savings": [
+    900000000.0,
+    900000000.0,
+    900000000.0,
+    900000000.0,
+    900000000.0
+   ],
+   "investment": {
+    "capexKrw": 2000000000.0,
+    "downtimeDays": 20,
+    "dailyLossKrw": 30000000.0,
+    "discountRate": 0.08,
+    "years": 5
+   },
+   "expected": {
+    "npvKrw": 993439033.3702765,
+    "paybackYear": 3,
+    "upfrontKrw": 2600000000.0
+   }
+  },
+  {
+   "name": "2024→2025 변화 분해 합",
+   "kind": "decomposeSum",
+   "before": {
+    "ship": {
+     "year": 2024,
+     "seaEffKgNm": 400.0,
+     "distanceNm": 60000.0,
+     "berthT": 1500.0,
+     "co2PerFuel": 3.17,
+     "etsShare": 0.75
+    },
+    "prices": {
+     "fuelUsdPerT": 620.0,
+     "euaEurPerT": 72.0,
+     "krwPerUsd": 1380.0,
+     "krwPerEur": 1500.0,
+     "asOf": "2026-10-01"
+    }
+   },
+   "after": {
+    "ship": {
+     "year": 2025,
+     "seaEffKgNm": 437.0,
+     "distanceNm": 60000.0,
+     "berthT": 9202.0,
+     "co2PerFuel": 3.17,
+     "etsShare": 0.75
+    },
+    "prices": {
+     "fuelUsdPerT": 680.0,
+     "euaEurPerT": 80.0,
+     "krwPerUsd": 1380.0,
+     "krwPerEur": 1500.0,
+     "asOf": "2026-10-01"
+    }
+   },
+   "expected": {
+    "change": 5008605179.810725
+   }
+  },
+  {
+   "name": "2023→2024 부과 시작 분해 합",
+   "kind": "decomposeSum",
+   "before": {
+    "ship": {
+     "year": 2023,
+     "seaEffKgNm": 437.0,
+     "distanceNm": 60000.0,
+     "berthT": 9202.0,
+     "co2PerFuel": 3.17,
+     "etsShare": 0.75
+    },
+    "prices": {
+     "fuelUsdPerT": 620.0,
+     "euaEurPerT": 72.0,
+     "krwPerUsd": 1380.0,
+     "krwPerEur": 1500.0,
+     "asOf": "2026-10-01"
+    }
+   },
+   "after": {
+    "ship": {
+     "year": 2024,
+     "seaEffKgNm": 437.0,
+     "distanceNm": 60000.0,
+     "berthT": 9202.0,
+     "co2PerFuel": 3.17,
+     "etsShare": 0.75
+    },
+    "prices": {
+     "fuelUsdPerT": 620.0,
+     "euaEurPerT": 72.0,
+     "krwPerUsd": 1380.0,
+     "krwPerEur": 1500.0,
+     "asOf": "2026-10-01"
+    }
+   },
+   "expected": {
+    "change": 1147672800.0
+   }
+  }
+ ]
+}

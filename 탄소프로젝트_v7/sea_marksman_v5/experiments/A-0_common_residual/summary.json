@@ -1,0 +1,180 @@
+{
+ "data": {
+  "file": "mrv_pipeline/data/processed/mrv_merged.parquet",
+  "versions": {
+   "2018": "v275",
+   "2019": "v228",
+   "2020": "v210",
+   "2021": "v219",
+   "2022": "v241",
+   "2023": "v92",
+   "2024": "v247",
+   "2025": "v60"
+  },
+  "data_hash": "b04c77ff",
+  "rows": 96382,
+  "ships": 22712
+ },
+ "metric": "co2_per_nm",
+ "base_year": 2025,
+ "types": {
+  "Bulk carrier": {
+   "n": 28750,
+   "ships": 8350,
+   "r2": 0.722,
+   "resid_sd_pct": 16.3,
+   "speed_elasticity": -0.185,
+   "speed_is_wait": true
+  },
+  "Chemical tanker": {
+   "n": 11001,
+   "ships": 2479,
+   "r2": 0.701,
+   "resid_sd_pct": 17.3,
+   "speed_elasticity": -0.168,
+   "speed_is_wait": true
+  },
+  "Container ship": {
+   "n": 15224,
+   "ships": 3438,
+   "r2": 0.919,
+   "resid_sd_pct": 15.9,
+   "speed_elasticity": 0.289,
+   "speed_is_wait": false
+  },
+  "Container/ro-ro cargo ship": {
+   "n": 536,
+   "ships": 110,
+   "r2": 0.653,
+   "resid_sd_pct": 18.7,
+   "speed_elasticity": 0.264,
+   "speed_is_wait": false
+  },
+  "Cruise passenger ship": {
+   "n": 993,
+   "ships": 206,
+   "r2": 0.937,
+   "resid_sd_pct": 15.4,
+   "speed_elasticity": 0.079,
+   "speed_is_wait": true
+  },
+  "Gas carrier": {
+   "n": 2699,
+   "ships": 712,
+   "r2": 0.779,
+   "resid_sd_pct": 20.4,
+   "speed_elasticity": -0.056,
+   "speed_is_wait": true
+  },
+  "General cargo ship": {
+   "n": 9795,
+   "ships": 2156,
+   "r2": 0.715,
+   "resid_sd_pct": 21.6,
+   "speed_elasticity": 0.235,
+   "speed_is_wait": false
+  },
+  "LNG carrier": {
+   "n": 2524,
+   "ships": 598,
+   "r2": 0.752,
+   "resid_sd_pct": 22.5,
+   "speed_elasticity": -0.122,
+   "speed_is_wait": true
+  },
+  "Oil tanker": {
+   "n": 14922,
+   "ships": 3729,
+   "r2": 0.797,
+   "resid_sd_pct": 18.2,
+   "speed_elasticity": -0.261,
+   "speed_is_wait": true
+  },
+  "Refrigerated cargo carrier": {
+   "n": 1113,
+   "ships": 217,
+   "r2": 0.745,
+   "resid_sd_pct": 17.3,
+   "speed_elasticity": 0.447,
+   "speed_is_wait": false
+  },
+  "Ro-pax ship": {
+   "n": 3114,
+   "ships": 490,
+   "r2": 0.744,
+   "resid_sd_pct": 26.1,
+   "speed_elasticity": 0.586,
+   "speed_is_wait": false
+  },
+  "Ro-ro ship": {
+   "n": 1924,
+   "ships": 391,
+   "r2": 0.662,
+   "resid_sd_pct": 21.9,
+   "speed_elasticity": 0.484,
+   "speed_is_wait": false
+  },
+  "Vehicle carrier": {
+   "n": 3647,
+   "ships": 728,
+   "r2": 0.605,
+   "resid_sd_pct": 15.2,
+   "speed_elasticity": 0.201,
+   "speed_is_wait": false
+  }
+ },
+ "validation": {
+  "asof": 2023,
+  "rule": "선종별 상위 2.5% → 다음 두 해 평균 잔차가 +10% 넘게 유지된 비율",
+  "single_year": {
+   "n": 262,
+   "still_over10": 0.664,
+   "future_median_pct": 17.8
+  },
+  "shrunk": {
+   "n": 262,
+   "still_over10": 0.771,
+   "future_median_pct": 20.7
+  },
+  "persistence_corr_2024_2025": 0.619
+ },
+ "identity_max_error": 4.440892098500626e-16,
+ "sign_problems": [
+  {
+   "ship_type": "Container ship",
+   "var": "ice",
+   "coef": -0.03,
+   "se": 0.009
+  },
+  {
+   "ship_type": "Gas carrier",
+   "var": "alt",
+   "coef": 0.283,
+   "se": 0.055
+  },
+  {
+   "ship_type": "Refrigerated cargo carrier",
+   "var": "age",
+   "coef": -0.003,
+   "se": 0.001
+  },
+  {
+   "ship_type": "Ro-pax ship",
+   "var": "ice",
+   "coef": -0.099,
+   "se": 0.018
+  }
+ ],
+ "groups": {
+  "size": "크기 (체급 안 차이)",
+  "speed": "속력",
+  "berth": "정박 중 배출",
+  "intra": "EU 역내 항해",
+  "hours": "EU 해상 시간",
+  "age": "선령",
+  "design": "설계 효율 지표",
+  "ice": "내빙 선급",
+  "alt": "대체연료",
+  "hsc": "고속선"
+ }
+}

@@ -1,0 +1,16 @@
+.git
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+data
+artifacts
+reports
+vendor/mrv_pipeline/data
+vendor/mrv_pipeline/reports
+web/node_modules
+web/dist
+web/public/data
+experiments
+tests
+docs

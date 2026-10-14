@@ -1,0 +1,65 @@
+# 팀 MRV 전처리 파이프라인(vendor/mrv_pipeline) 결과 + 공통잔차 모델 설정 (default.yaml 을 복사해 바꾼 것). 쓰는 법: docs/PLUGIN_GUIDE.md
+# Sea Marksman 기본 설정. 숫자 기준(임계값)은 코드에 박지 않고 여기에만 둔다.
+# 다른 설정으로 돌리려면: python tasks.py all --config config/내설정.yaml
+
+project:
+  model_version: "0.1.0"          # 모델·결과 형식을 바꾸면 올린다 (결과 표 형식 버전은 contracts/tables.py)
+
+data:
+  source: mrv_pipeline            # sample = 합성 표본 | mrv = 연도별 파일을 직접 읽음(제원 수집 필요) | mrv_pipeline = 팀 전처리 파이프라인 결과
+  merged_path: null               # 이미 만든 mrv_merged.parquet/csv 가 있으면 경로. 환경변수 MRV_MERGED_PATH 가 우선. 둘 다 없으면 팀 파이프라인을 실행
+  mrv_root: data/mrv_pipeline     # 팀 파이프라인 작업 폴더 (data/raw 에 MRV 엑셀, data/processed 에 결과)
+  team_pipeline: {mode: version, fetch: false, crawl: false}   # fetch: true = MRV 사이트에서 새 판 내려받기
+  min_gross_tonnage: 5000         # 팀 분석 범위 (총톤수 5,000 이상). null = 전부
+  years: [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
+  raw_dir: data/raw
+  snapshot_dir: data/snapshots/mrv
+  cache_dir: data/cache
+  column_map: config/column_map.yaml
+  ship_types: [container, tanker, chemical_tanker, bulk, general_cargo, vehicle_carrier, ro_pax, gas_carrier, lng_carrier,
+               ro_ro, reefer, cruise, container_ro_ro]   # 표준 선종 이름 13개 (열 대응표에서 원본 이름을 이걸로 바꿈)
+
+train:
+  cutoff_year: null               # null = 전체 연도로 학습. 시간 분할 검증은 evaluation이 직접 잘라서 씀
+  seed: 42
+
+# 모델 슬롯: 순서대로 실행된다. "모듈:클래스" 를 바꾸면 부품이 교체된다.
+# 각 부품은 models/base.py 의 Stage 규칙(requires → produces)을 지킨다.
+stages:
+  - use: models.common.peer:PeerGroup
+    params: {size_col: cii_capacity}                              # 크기 = 선종에 따라 재화중량 또는 총톤수
+  - use: models.common.common_residual:CommonResidualBaseline     # 공통잔차 모델 신판 (experiments/A-0_common_residual)
+    params: {size: ln_cii_capacity}
+  - use: models.common.berth:BerthCompare
+  - use: models.common.position:EmpiricalBayesPosition            # 줄여 잡은 평균 판정값
+  - use: models.quality.signals:IllusionSignals
+  - use: models.forecast.persist:PersistProbability                 # 점검 필요 판정 유지 확률 (방현수 08_유지확률) → persist_prob·요인
+  - use: models.cluster.team:TeamTypes                             # 팀 두 축 유형: 노출도 × 선령·설계 (K-평균, 선단 기준 고정)
+    params: {k: 3, n_init: 20, window: 3}
+  - use: models.cluster.team:OpsAnomaly                            # 이상 운항: 선종별 운항 지표 군집에서 먼 상위 2.5%
+    params: {k: 6, top: 0.025}
+  - use: models.forecast.quantile_stage:QuantileForecast           # 해상 효율 예측 (정박 제외) → fc_h*_p*
+    params: {level: sea_eff_kg_nm, prefix: fc}
+  - use: models.forecast.quantile_stage:QuantileForecast           # 전체 효율 예측 (정박 포함) → fct_h*_p*, 비용·CII D·E 확률용
+    params: {level: co2_per_nm_kg, prefix: fct, cii: true}
+  - use: models.forecast.lists:ListRule                            # 다음 해 리스트(영업 타깃·관찰) → list_h1. 기준 p* 는 학습 때 고정
+    params: {de_cut: 0.8, watch_quantile: 0.75, watch_ratings: [A, B, C]}
+
+thresholds:                        # 2-3절 착시 신호, 5-7절 점검 규칙
+  short_sea_hours: 500
+  co2_per_fuel_min: 3.05
+  cargo_dwt_ratio_max: 1.2
+  min_speed_kn: 3.0
+  berth_sigma: 2.0
+  z_consistently_high: 2.0
+  train_range_q: [0.01, 0.99]     # 이 범위를 벗어난 입력은 "외삽" 경고
+  special_operators: ["Shuttle Tankers AS"]
+
+physics:                           # 6장 가정 계산(속력 변경). 방현수 님이 선종별 값을 채움
+  main_engine_share: {container: 0.75, tanker: 0.70, bulk: 0.75, ro_pax: 0.60}   # 나머지 선종은 방현수 님이 채울 때까지 비워 둠 (API 는 직접 입력 요청)
+
+api:
+  cors_origins: ["http://localhost:5173"]
+
+web:
+  public_data_dir: web/public/data
